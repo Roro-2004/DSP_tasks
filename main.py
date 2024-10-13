@@ -80,18 +80,18 @@ def sine_cosine_generation():
 
             if selected_signal == "sin" and not sine_plotted:
                 # Generate sine wave
-                sine_samples = amplitude * np.sin(2 * np.pi * analog_freq * t + phase_shift)
+                sine_samples = amplitude * np.sin(2 * np.pi * analog_freq * t + (phase_shift))
                 ax.plot(t, sine_samples, label='Sine Signal', color='blue', linewidth=2)
                 sine_plotted = True  # Mark sine wave as plotted
 
             if selected_signal == "cos" and not cosine_plotted:
                 # Generate cosine wave
-                cosine_samples = amplitude * np.cos(2 * np.pi * analog_freq * t + phase_shift)
+                cosine_samples = amplitude * np.cos(2 * np.pi * analog_freq * t + (phase_shift))
                 ax.plot(t, cosine_samples, label='Cosine Signal', color='red', linewidth=2)
                 cosine_plotted = True  # Mark cosine wave as plotted
 
             # Set limits for x and y axes
-            ax.set_xlim(0, 0.01)  # Display the first 0.01 seconds
+            ax.set_xlim(0,  0.01 )  # Display the first 0.01 seconds
             ax.set_ylim(-amplitude * 1.5, amplitude * 1.5)  # Adjust y-limits based on amplitude
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Amplitude')
