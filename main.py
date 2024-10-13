@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 
@@ -12,7 +13,7 @@ def signal_representation():
 
  
         # Read signal data from the file
-        with open(r'C:\\Users\\96650\\Desktop\\Signals-20241011T095133Z-001\\Signals\\signal1.txt', 'r') as f:
+        with open(r'D:/uni/DSP/DSP_tasks/signal1.txt', 'r') as f:
             for _ in range(3):  # Skip the first 3 lines
                 next(f)
             time = []
@@ -64,14 +65,11 @@ def task1_sub_tasks():
     signal_button.pack(pady=10)
 
     # Sine/Cosine Representation Button (for later use)
-    sine_cosine_button = tk.Button(root, text="Sine/Cosine Representation", command=sine_cosine_generation)
+    sine_cosine_button = tk.Button(root, text="Sine/Cosine Representation", command=sine_cosine_generation_menue)
     sine_cosine_button.pack(pady=10)
+    validate()
 
-    # Back Button to go to the Main Menu
-    back_button = tk.Button(root, text="Back", command=main_menu)
-    back_button.pack(pady=20)
-
-def sine_cosine_generation():
+def sine_cosine_generation_menue():
     # Create the main window
     rep_window = tk.Tk()
     rep_window.title("Signal Representation")
