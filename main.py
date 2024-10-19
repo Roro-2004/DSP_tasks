@@ -326,7 +326,7 @@ def compare_signals(time, modified_amplitude):
                 output_amplitude.append(a)
 
         # Compare the modified signal with the output signal
-        discrepancies = sum(np.abs(np.array(modified_amplitude) - np.array(output_amplitude)) > 1e-5)
+        discrepancies = sum(np.abs(np.array(modified_amplitude) - np.array(output_amplitude)) )
 
         if discrepancies == 0:
             messagebox.showinfo("Comparison Result", "The modified signal matches the output signal.")
