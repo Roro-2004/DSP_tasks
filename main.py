@@ -72,9 +72,9 @@ def task1_sub_tasks():
 def sine_cosine_generation_menue():
     # Create the main window
     rep_window = tk.Tk()
-    rep_window.title("Signal Representation")
+    rep_window.title("Sine/cos Representation")
     rep_window.geometry("700x700")
-    
+    rep_window.config(background="lightblue")
     frame = ttk.Frame(rep_window, padding="20")
     frame.grid(row=0, column=0, padx=10, pady=10)
     # Signal type label and dropdown
@@ -122,7 +122,7 @@ def sine_cosine_generation_menue():
                 print("Sampling frequency must be at least 2 times the analog frequency.")
                 return
 
-            # Time array based on the sampling frequency
+            
             t = np.arange(0.0, 1.0, 1.0 / sampling_freq)
 
             if selected_signal == "sin" and not sine_plotted:
@@ -139,7 +139,7 @@ def sine_cosine_generation_menue():
 
             # Set limits for x and y axes
             ax.set_xlim(0,  0.01 )  # Display the first 0.01 seconds
-            ax.set_ylim(-amplitude * 1.5, amplitude * 1.5)  # Adjust y-limits based on amplitude
+            #ax.set_ylim(-amplitude * 1.5, amplitude * 1.5)  # Adjust y-limits based on amplitude
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Amplitude')
             ax.set_title('Sine and Cosine Signals')
@@ -164,7 +164,7 @@ def sine_cosine_generation_menue():
 
 # Define the signal generation function
 def generate_signal(signal_type, amplitude, phase_shift, analog_freq, sampling_freq):
-    # Time array based on the sampling frequency and duration
+    
     t = np.arange(0.0, 1.0, 1.0 / sampling_freq)
     # Generate sine or cosine signal
     if signal_type == 'sin':
@@ -220,8 +220,8 @@ root = tk.Tk()
 root.title("Tasks")
 root.geometry("900x600")  # Adjusted size to fit everything properly
 
-task_1_button = tk.Button(root, text="Task 1", command=task1_sub_tasks)
+task_1_button = tk.Button(root, text="main menue", command=task1_sub_tasks)
 task_1_button.pack(pady=20)
-
+root.config(background='lightblue')
 root.mainloop()
 ####sssssss
