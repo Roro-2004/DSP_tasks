@@ -29,22 +29,18 @@ def task1_sub_tasks():
     accumulate_button = tk.Button(root, text="Accumulate Signal", command=accumulate_signal)
     accumulate_button.pack(pady=10)
 
-def signal_representation():
-    try:
-        # Clear the main window to display the new page
-        for widget in root.winfo_children():
-            widget.destroy()
 
-        # File dialog to select the signal file
+def browse_and_read_signal_file():
+    
+    try:
         file_path = filedialog.askopenfilename(
-            title="Select Signal File", 
+            title="Select Signal File",
             filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
         )
 
-        if not file_path:  # If no file is selected, return to the previous menu
+        if not file_path:
             messagebox.showinfo("No File Selected", "Please select a valid file.")
-            task1_sub_tasks()
-            return
+            return None, None  # Return None to indicate no valid selection
 
         # Read signal data from the file
         with open(file_path, 'r') as f:
@@ -56,6 +52,25 @@ def signal_representation():
                 time.append(t)
                 amplitude.append(a)
 
+        return np.array(time), np.array(amplitude)  # Return as NumPy arrays
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+        return None, None
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        return None, None
+    
+
+    
+def signal_representation():
+    try:
+        # Clear the main window to display the new page
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        time, amplitude = browse_and_read_signal_file()
+       
         # Create a figure with two subplots (side-by-side)
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
 
@@ -241,27 +256,9 @@ def multiply_signal():
         for widget in root.winfo_children():
             widget.destroy()
 
-        # File dialog to select the signal file
-        file_path = filedialog.askopenfilename(
-            title="Select Signal File", 
-            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
-        )
-
-        if not file_path:  # If no file is selected, return to the previous menu
-            messagebox.showinfo("No File Selected", "Please select a valid file.")
-            task1_sub_tasks()
-            return
-
-        # Read signal data from the file
-        with open(file_path, 'r') as f:
-            for _ in range(3):  # Skip the first 3 lines
-                next(f)
-            time, amplitude = [], []
-            for line in f:
-                t, a = map(float, line.split())
-                time.append(t)
-                amplitude.append(a)
-
+        time, amplitude = browse_and_read_signal_file()
+        
+    
         # Ask for the constant to multiply the signal
         constant = float(simpledialog.askstring("Input", "Enter a constant to multiply the signal by:"))
 
@@ -347,27 +344,8 @@ def square_signal():
         for widget in root.winfo_children():
             widget.destroy()
 
-        # File dialog to select the signal file
-        file_path = filedialog.askopenfilename(
-            title="Select Signal File", 
-            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
-        )
-
-        if not file_path:  # If no file is selected, return to the previous menu
-            messagebox.showinfo("No File Selected", "Please select a valid file.")
-            task1_sub_tasks()
-            return
-
-        # Read signal data from the file
-        with open(file_path, 'r') as f:
-            for _ in range(3):  # Skip the first 3 lines
-                next(f)
-            time, amplitude = [], []
-            for line in f:
-                t, a = map(float, line.split())
-                time.append(t)
-                amplitude.append(a)
-
+        time, amplitude = browse_and_read_signal_file()
+   
         # Square the signal
         #squared_amplitude = np.array(amplitude) ** 2
         # Convert to NumPy arrays to ensure they have the right type for operations
@@ -420,27 +398,8 @@ def accumulate_signal():
         for widget in root.winfo_children():
             widget.destroy()
 
-        # File dialog to select the signal file
-        file_path = filedialog.askopenfilename(
-            title="Select Signal File",
-            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
-        )
-
-        if not file_path:  # If no file is selected, return to the previous menu
-            messagebox.showinfo("No File Selected", "Please select a valid file.")
-            task1_sub_tasks()
-            return
-
-        # Read signal data from the file
-        with open(file_path, 'r') as f:
-            for _ in range(3):  # Skip the first 3 lines
-                next(f)
-            time, amplitude = [], []
-            for line in f:
-                t, a = map(float, line.split())
-                time.append(t)
-                amplitude.append(a)
-
+        time, amplitude = browse_and_read_signal_file()
+    
         # Convert to NumPy arrays to ensure they have the right type for operations
         time = np.array(time, dtype=np.float64)
         amplitude = np.array(amplitude, dtype=np.float64)
