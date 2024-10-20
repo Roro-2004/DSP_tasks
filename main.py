@@ -357,18 +357,6 @@ def sub_validation():
     txt = "signal 1 - signal 3 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\signal1-signal3.txt",ind, samples )
     label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
     label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
-def normalize_validation():
-    rep_window = tk.Tk()
-    rep_window.title("normalize  veridect")
-    rep_window.geometry("700x700")
-    ind, samples = normalize()
-    txt = "signal 1 normalized "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normalize of signal 1 (from -1 to 1)-- output.txt",ind, samples )
-    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
-    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
-    ind, samples = normalize()
-    txt = "signal 2  normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normlize signal 2 (from 0 to 1 )-- output.txt",ind, samples )
-    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
-    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
 def normalize():
     def on_submit():
         try:
@@ -440,7 +428,7 @@ def menue():
      button2.pack(pady=10)
      button3 = tk.Button(rep_window, text="subtract signals", command=sub_validation)
      button3.pack(pady=10)
-     button4 = tk.Button(rep_window, text="normalize signals", command=normalize_validation)
+     button4 = tk.Button(rep_window, text="normalize signals", command=normalize)
      button4.pack(pady=10)
 
 # Main window properties
