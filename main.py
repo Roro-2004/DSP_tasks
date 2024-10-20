@@ -1,8 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tkinter import ttk
+from tkinter import Button, Label, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
+from tkinter import filedialog, messagebox
+from tkinter.ttk import Combobox
+
+
+def read_signal_file(file_path):
+    try:
+        # Use np.loadtxt with usecols to select only the second column (signal values) and skip the first two rows
+        data = np.loadtxt(file_path, skiprows=3, usecols=1)  # Skipping the first 2 rows and selecting column 1 (signal values)
+        return data
+    except Exception as e:
+        raise ValueError(f"Error reading file {file_path}: {e}")
 
 def signal_representation():
     try:
@@ -13,7 +24,7 @@ def signal_representation():
 
  
         # Read signal data from the file
-        with open(r'D:/uni/DSP/DSP_tasks/signal1.txt', 'r') as f:
+        with open(r'D:\\uni\\DSP\\DSP_tasks\\task1\\signal1.txt', 'r') as f:
             for _ in range(3):  # Skip the first 3 lines
                 next(f)
             time = []
@@ -67,7 +78,15 @@ def task1_sub_tasks():
     # Sine/Cosine Representation Button (for later use)
     sine_cosine_button = tk.Button(root, text="Sine/Cosine Representation", command=sine_cosine_generation_menue)
     sine_cosine_button.pack(pady=10)
-    validate()
+
+    add_button = tk.Button(root, text="add 2 signals", command=add)
+    add_button.pack(pady=10)
+
+    sub_button = tk.Button(root, text="subtract 2 signals", command=sub)
+    sub_button.pack(pady=10)
+
+    button4 = tk.Button(root, text="normalize signals", command=normalize)
+    button4.pack(pady=10)
 
 def sine_cosine_generation_menue():
     # Create the main window
@@ -209,11 +228,220 @@ def SignalSamplesAreEqual(file_name, indices, samples):
             return "Test case failed, your signal has different values from the expected one"
     return "Test case passed successfully"
 
-def validate():
+def sine_cos_validate():
+    rep_window = tk.Tk()
+    rep_window.title("sine / cosine veridect")
+    rep_window.geometry("700x700")
+     # Generate and validate the sine signal
     ind, samp, t = generate_signal("sin", 3, 1.96349540849362, 360, 720)
-    print("sine " + SignalSamplesAreEqual("D:/uni/DSP/DSP_tasks/SinOutput.txt", ind, samp))
+    sine_validation = "sine: " + SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task1\\SinOutput.txt", ind, samp)
+    
+    # Display the sine result on the same page
+    label_sine = tk.Label(rep_window, text=sine_validation, font=('Arial', 14))
+    label_sine.pack(pady=10)  # Adjust the padding as needed
+    
+    # Print the sine validation result
+    print(sine_validation)
+
+    # Generate and validate the cosine signal
     ind, samp, t = generate_signal("cos", 3, 2.35619449019235, 200, 500)
-    print("cosine " + SignalSamplesAreEqual("D:/uni/DSP/DSP_tasks/CosOutput.txt", ind, samp))
+    cosine_validation = "cosine: " + SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task1\\CosOutput.txt", ind, samp)
+    
+    # Display the cosine result on the same page
+    label_cosine = tk.Label(rep_window, text=cosine_validation, font=('Arial', 14))
+    label_cosine.pack(pady=10)  # Adjust the padding as needed
+    
+    # Print the cosine validation result
+    print(cosine_validation)
+def add_validation():
+    rep_window = tk.Tk()
+    rep_window.title("add veridect veridect")
+    rep_window.geometry("700x700")
+    ind, samples = add()
+    txt = "signal 1 + signal 2 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\Signal1+signal2.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+    ind, samples = add()
+    txt = "signal 1 + signal 3 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\Signal1+signal3.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+def add():
+    try:
+        # Select the first file
+        file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file1:
+            raise ValueError("No file selected for Signal 1.")
+
+        # Select the second file
+        file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file2:
+            raise ValueError("No file selected for Signal 2.")
+
+        # Read the signal values from both files
+        signal1 = read_signal_file(file1)
+        signal2 = read_signal_file(file2)
+
+        # Ensure both signals have the same length
+        if len(signal1) != len(signal2):
+            raise ValueError("The two signals must have the same length.")
+
+        # Add the signals together
+        result_signal = signal1 + signal2
+        index = np.arange(len(result_signal))  # Create an index array for plotting
+
+        # Plot the result
+        plt.figure(figsize=(10, 6))
+        plt.plot(index, signal1, label='Signal 1')
+        plt.plot(index, signal2, label='Signal 2')
+        plt.plot(index, result_signal, label='Resulting Signal', linewidth=3, color='black')
+        plt.title("Added Signals")
+        plt.xlabel("Index")
+        plt.ylabel("Signal Value")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+    return index, result_signal
+def sub():
+    try:
+        # Select the first file
+        file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file1:
+            raise ValueError("No file selected for Signal 1.")
+
+        # Select the second file
+        file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file2:
+            raise ValueError("No file selected for Signal 2.")
+
+        # Read the signal values from both files
+        signal1 = read_signal_file(file1)
+        signal2 = read_signal_file(file2)
+
+        # Ensure both signals have the same length
+        if len(signal1) != len(signal2):
+            raise ValueError("The two signals must have the same length.")
+
+        # Subtract the signals
+        result_signal = signal2 - signal1
+        index = np.arange(len(result_signal))  # Create an index array for plotting
+
+        # Plot the result
+        plt.figure(figsize=(10, 6))
+        plt.plot(index, signal1, label='Signal 1')
+        plt.plot(index, signal2, label='Signal 2')
+        plt.plot(index, result_signal, label='Resulting Signal (Signal 1 - Signal 2)', linewidth=3, color='black')
+        plt.title("Subtracted Signals")
+        plt.xlabel("Index")
+        plt.ylabel("Signal Value")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+    
+    return index, result_signal
+
+def sub_validation():
+    rep_window = tk.Tk()
+    rep_window.title("add veridect veridect")
+    rep_window.geometry("700x700")
+    ind, samples = sub()
+    txt = "signal 1 - signal 2 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\signal1-signal2.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+    ind, samples = sub()
+    txt = "signal 1 - signal 3 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\signal1-signal3.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+def normalize_validation():
+    rep_window = tk.Tk()
+    rep_window.title("normalize  veridect")
+    rep_window.geometry("700x700")
+    ind, samples = normalize()
+    txt = "signal 1 normalized "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normalize of signal 1 (from -1 to 1)-- output.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+    ind, samples = normalize()
+    txt = "signal 2  normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normlize signal 2 (from 0 to 1 )-- output.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+def normalize():
+    def on_submit():
+        try:
+            # Get the selected range type from the combobox
+            range_type = combobox.get()
+            if range_type not in ["[-1, 1]", "[0, 1]"]:
+                raise ValueError("Please select a valid normalization range.")
+            
+            # Select the signal file
+            file1 = filedialog.askopenfilename(title="Select Signal File", filetypes=[("Text Files", "*.txt")])
+            if not file1:
+                raise ValueError("No file selected for the signal.")
+            
+            # Read the signal from the file
+            signal = read_signal_file(file1)
+            min_val = np.min(signal)
+            max_val = np.max(signal)
+
+            # Normalize the signal based on the chosen range
+            if range_type == "[-1, 1]":
+                normalized_signal = 2 * (signal - min_val) / (max_val - min_val) - 1
+            elif range_type == "[0, 1]":
+                normalized_signal = (signal - min_val) / (max_val - min_val)
+            else:
+                raise ValueError("Invalid range_type. Choose '[-1, 1]' or '[0, 1]'.")
+
+            # Create an index array for plotting
+            index = np.arange(len(signal))
+
+            # Plot the normalized signal
+            plt.figure(figsize=(10, 6))
+            plt.plot(index, normalized_signal, label='Normalized Signal', linewidth=3, color='black')
+            plt.title(f"Normalized Signal (Range: {range_type})")
+            plt.xlabel("Index")
+            plt.ylabel("Signal Value")
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+            if range_type =="[-1, 1]":
+                print("signal 1 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normalize of signal 1 (from -1 to 1)-- output.txt", index, normalized_signal))
+            else:
+                print("signal 2  normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normlize signal 2 (from 0 to 1 )-- output.txt",index, normalized_signal))
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+
+    # Clear previous widgets
+    for widget in root.winfo_children():
+        widget.destroy()
+
+    # Create a label and a combobox for the user to select the range
+    label = Label(root, text="Select Normalization Range", font=("Arial", 14))
+    label.pack(pady=10)
+
+    combobox = Combobox(root, values=["[-1, 1]", "[0, 1]"], font=("Arial", 12))
+    combobox.set("[-1, 1]")  # Set default value
+    combobox.pack(pady=10)
+
+    # Create a submit button
+    submit_button = Button(root, text="Submit", font=("Arial", 14), bg="lightblue", command=on_submit)
+    submit_button.pack(pady=20)
+
+def menue():
+     rep_window = tk.Tk()
+     rep_window.title("validation menue")
+     rep_window.geometry("700x700")
+     button1 = tk.Button(rep_window, text="sin/cosine validation", command=sine_cos_validate)
+     button1.pack(pady=10)
+     button2 = tk.Button(rep_window, text="add signals", command=add_validation)
+     button2.pack(pady=10)
+     button3 = tk.Button(rep_window, text="subtract signals", command=sub_validation)
+     button3.pack(pady=10)
+     button4 = tk.Button(rep_window, text="normalize signals", command=normalize_validation)
+     button4.pack(pady=10)
 
 # Main window properties
 root = tk.Tk()
@@ -222,6 +450,9 @@ root.geometry("900x600")  # Adjusted size to fit everything properly
 
 task_1_button = tk.Button(root, text="main menue", command=task1_sub_tasks)
 task_1_button.pack(pady=20)
+
+task_2_button = tk.Button(root, text="validate", command=menue)
+task_2_button.pack(pady=20)
 root.config(background='lightblue')
 root.mainloop()
 ####sssssss
