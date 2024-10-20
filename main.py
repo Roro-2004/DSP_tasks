@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tkinter import Button, Label, ttk
+from tkinter import Button, Label, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -417,7 +417,231 @@ def normalize():
     # Create a submit button
     submit_button = Button(root, text="Submit", font=("Arial", 14), bg="lightblue", command=on_submit)
     submit_button.pack(pady=20)
+def browse_and_read_signal_file():
+    
+    try:
+        file_path = filedialog.askopenfilename(
+            title="Select Signal File",
+            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
+        )
 
+        if not file_path:
+            messagebox.showinfo("No File Selected", "Please select a valid file.")
+            return None, None  # Return None to indicate no valid selection
+
+        # Read signal data from the file
+        with open(file_path, 'r') as f:
+            for _ in range(3):  # Skip the first 3 lines
+                next(f)
+            time, amplitude = [], []
+            for line in f:
+                t, a = map(float, line.split())
+                time.append(t)
+                amplitude.append(a)
+
+        return np.array(time), np.array(amplitude)  # Return as NumPy arrays
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+        return None, None
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        return None, None
+    
+
+    
+def accumulate_signal():
+    try:
+        # Clear the main window to display the new page
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        time, amplitude = browse_and_read_signal_file()
+    
+        # Convert to NumPy arrays to ensure they have the right type for operations
+        time = np.array(time, dtype=np.float64)
+        amplitude = np.array(amplitude, dtype=np.float64)
+
+        # Compute cumulative sum of the amplitude
+        modified_amplitude = np.cumsum(amplitude)
+
+        # Create a figure with two subplots (side-by-side)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+        # Original signal
+        ax1.plot(time, amplitude, label='Original Signal', color='blue')
+        ax1.set_title('Original Signal')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Amplitude')
+        ax1.grid(True)
+        ax1.legend()
+
+        # Accumulated signal
+        ax2.plot(time, modified_amplitude, label='Accumulated Signal', color='green')
+        ax2.set_title('Accumulated Signal')
+        ax2.set_xlabel('Time')
+        ax2.set_ylabel('Amplitude')
+        ax2.grid(True)
+        ax2.legend()
+
+        # Embed the figure in the Tkinter window
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
+        compare_button.pack(pady=20)
+
+        # Back Button to return to Task 1 Sub Tasks menu
+        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
+        back_button.pack(pady=20)
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+def square_signal():
+    try:
+        # Clear the main window to display the new page
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        time, amplitude = browse_and_read_signal_file()
+   
+        # Square the signal
+        #squared_amplitude = np.array(amplitude) ** 2
+        # Convert to NumPy arrays to ensure they have the right type for operations
+        time = np.array(time, dtype=np.float64)
+        amplitude = np.array(amplitude, dtype=np.float64)
+
+        # Square the signal
+        modified_amplitude = amplitude ** 2
+
+
+        # Create a figure with two subplots (side-by-side)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+        # Original signal
+        ax1.plot(time, amplitude, label='Original Signal', color='blue')
+        ax1.set_title('Original Signal')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Amplitude')
+        ax1.grid(True)
+        ax1.legend()
+
+        # Squared signal
+        ax2.plot(time, modified_amplitude, label='Squared Signal', color='green')
+        ax2.set_title('Squared Signal')
+        ax2.set_xlabel('Time')
+        ax2.set_ylabel('Amplitude')
+        ax2.grid(True)
+        ax2.legend()
+
+        # Embed the figure in the Tkinter window
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
+        compare_button.pack(pady=20)
+
+        # Back Button to return to Task 1 Sub Tasks menu
+        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
+        back_button.pack(pady=20)
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+def multiply_signal():
+    try:
+        # Clear the main window to display the new page
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        time, amplitude = browse_and_read_signal_file()
+        
+    
+        # Ask for the constant to multiply the signal
+        constant = float(simpledialog.askstring("Input", "Enter a constant to multiply the signal by:"))
+
+        # Modify the signal
+        modified_amplitude = np.array(amplitude) * constant
+
+        # Create a figure with two subplots (side-by-side)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+        # Original signal
+        ax1.plot(time, amplitude, label='Original Signal', color='blue')
+        ax1.set_title('Original Signal')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Amplitude')
+        ax1.grid(True)
+        ax1.legend()
+
+        # Modified signal
+        ax2.plot(time, modified_amplitude, label='Modified Signal', color='red')
+        ax2.set_title('Modified Signal')
+        ax2.set_xlabel('Time')
+        ax2.set_ylabel('Amplitude')
+        ax2.grid(True)
+        ax2.legend()
+
+        # Embed the figure in the Tkinter window
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        # Comparison Button to compare with output file
+        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude))
+        compare_button.pack(pady=20)
+
+        # Back Button to return to Task 1 Sub Tasks menu
+        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
+        back_button.pack(pady=20)
+
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter a valid number for the constant.")
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+def compare_signals(time, modified_amplitude):
+    try:
+        # File dialog to select the output file
+        output_file_path = filedialog.askopenfilename(
+            title="Select Output File", 
+            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
+        )
+
+        if not output_file_path:  # If no file is selected, return
+            messagebox.showinfo("No File Selected", "Please select a valid output file.")
+            return
+
+        # Read the output signal data from the file
+        with open(output_file_path, 'r') as f:
+            for _ in range(3):  # Skip the first 3 lines
+                next(f)
+            output_amplitude = []
+            for line in f:
+                _, a = map(float, line.split())
+                output_amplitude.append(a)
+
+        # Compare the modified signal with the output signal
+        discrepancies = sum(np.abs(np.array(modified_amplitude) - np.array(output_amplitude)) )
+
+        if discrepancies == 0:
+            messagebox.showinfo("Comparison Result", "The modified signal matches the output signal.")
+        else:
+            messagebox.showinfo("Comparison Result", f"The modified signal has {discrepancies} discrepancies with the output signal.")
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified output file was not found.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 def menue():
      rep_window = tk.Tk()
      rep_window.title("validation menue")
@@ -430,6 +654,12 @@ def menue():
      button3.pack(pady=10)
      button4 = tk.Button(rep_window, text="normalize signals", command=normalize)
      button4.pack(pady=10)
+     button5 = tk.Button(rep_window, text="multiply signals", command=multiply_signal)
+     button5.pack(pady=10)
+     button6 = tk.Button(rep_window, text="square signals", command=square_signal)
+     button6.pack(pady=10)
+     button6 = tk.Button(rep_window, text="accumilate signals", command=accumulate_signal)
+     button6.pack(pady=10)
 
 # Main window properties
 root = tk.Tk()
