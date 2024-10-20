@@ -408,7 +408,7 @@ def normalize():
             plt.grid(True)
             plt.show()
             if range_type =="[-1, 1]":
-                print("signal 1 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normalize of signal 1 (from -1 to 1)-- output.txt", index, normalized_signal))
+                print("signal 1 normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normalize of signal 1 (from -1 to 1)-- output.txt", index, normalized_signal))
             else:
                 print("signal 2  normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normlize signal 2 (from 0 to 1 )-- output.txt",index, normalized_signal))
         except ValueError as e:
