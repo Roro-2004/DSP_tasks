@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tkinter import Button, Label, simpledialog, ttk
+from tkinter import Button, IntVar, Label, Radiobutton, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -9,8 +9,7 @@ from tkinter.ttk import Combobox
 
 def read_signal_file(file_path):
     try:
-        # Use np.loadtxt with usecols to select only the second column (signal values) and skip the first two rows
-        data = np.loadtxt(file_path, skiprows=3, usecols=1)  # Skipping the first 2 rows and selecting column 1 (signal values)
+        data = np.loadtxt(file_path, skiprows=3, usecols=1)  
         return data
     except Exception as e:
         raise ValueError(f"Error reading file {file_path}: {e}")
@@ -88,6 +87,10 @@ def task1_sub_tasks():
     button4 = tk.Button(root, text="normalize signals", command=normalize)
     button4.pack(pady=10)
 
+    button7 = tk.Button(root, text="quant signals", command=open_choice_menu)
+    button7.pack(pady=10)
+
+    
 def sine_cosine_generation_menue():
     # Create the main window
     rep_window = tk.Tk()
@@ -181,7 +184,7 @@ def sine_cosine_generation_menue():
     rep_window.mainloop()
 
 
-# Define the signal generation function
+
 def generate_signal(signal_type, amplitude, phase_shift, analog_freq, sampling_freq):
     
     t = np.arange(0.0, 1.0, 1.0 / sampling_freq)
@@ -197,7 +200,7 @@ def generate_signal(signal_type, amplitude, phase_shift, analog_freq, sampling_f
     indices = np.arange(len(t))
     return indices, samples, t
 
-# Sample validation function (for demonstration purposes)
+
 def SignalSamplesAreEqual(file_name, indices, samples):
     expected_indices = []
     expected_samples = []
@@ -260,36 +263,36 @@ def add_validation():
     ind, samples = add()
     txt = "signal 1 + signal 2 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\Signal1+signal2.txt",ind, samples )
     label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
-    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+    label_signal1_signal2.pack(pady=10)  
     ind, samples = add()
     txt = "signal 1 + signal 3 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\Signal1+signal3.txt",ind, samples )
     label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
-    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+    label_signal1_signal2.pack(pady=10)  
 def add():
     try:
-        # Select the first file
+
         file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=[("Text Files", "*.txt")])
         if not file1:
             raise ValueError("No file selected for Signal 1.")
 
-        # Select the second file
+        
         file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=[("Text Files", "*.txt")])
         if not file2:
             raise ValueError("No file selected for Signal 2.")
 
-        # Read the signal values from both files
+    
         signal1 = read_signal_file(file1)
         signal2 = read_signal_file(file2)
 
-        # Ensure both signals have the same length
+        
         if len(signal1) != len(signal2):
             raise ValueError("The two signals must have the same length.")
 
-        # Add the signals together
+        
         result_signal = signal1 + signal2
-        index = np.arange(len(result_signal))  # Create an index array for plotting
+        index = np.arange(len(result_signal))  
 
-        # Plot the result
+        
         plt.figure(figsize=(10, 6))
         plt.plot(index, signal1, label='Signal 1')
         plt.plot(index, signal2, label='Signal 2')
@@ -306,29 +309,29 @@ def add():
     return index, result_signal
 def sub():
     try:
-        # Select the first file
+        
         file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=[("Text Files", "*.txt")])
         if not file1:
             raise ValueError("No file selected for Signal 1.")
 
-        # Select the second file
+        
         file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=[("Text Files", "*.txt")])
         if not file2:
             raise ValueError("No file selected for Signal 2.")
 
-        # Read the signal values from both files
+        
         signal1 = read_signal_file(file1)
         signal2 = read_signal_file(file2)
 
-        # Ensure both signals have the same length
+        
         if len(signal1) != len(signal2):
             raise ValueError("The two signals must have the same length.")
 
-        # Subtract the signals
+        
         result_signal = signal2 - signal1
-        index = np.arange(len(result_signal))  # Create an index array for plotting
+        index = np.arange(len(result_signal))  
 
-        # Plot the result
+        
         plt.figure(figsize=(10, 6))
         plt.plot(index, signal1, label='Signal 1')
         plt.plot(index, signal2, label='Signal 2')
@@ -360,22 +363,22 @@ def sub_validation():
 def normalize():
     def on_submit():
         try:
-            # Get the selected range type from the combobox
+            
             range_type = combobox.get()
             if range_type not in ["[-1, 1]", "[0, 1]"]:
                 raise ValueError("Please select a valid normalization range.")
             
-            # Select the signal file
+            
             file1 = filedialog.askopenfilename(title="Select Signal File", filetypes=[("Text Files", "*.txt")])
             if not file1:
                 raise ValueError("No file selected for the signal.")
             
-            # Read the signal from the file
+            
             signal = read_signal_file(file1)
             min_val = np.min(signal)
             max_val = np.max(signal)
 
-            # Normalize the signal based on the chosen range
+        
             if range_type == "[-1, 1]":
                 normalized_signal = 2 * (signal - min_val) / (max_val - min_val) - 1
             elif range_type == "[0, 1]":
@@ -383,10 +386,10 @@ def normalize():
             else:
                 raise ValueError("Invalid range_type. Choose '[-1, 1]' or '[0, 1]'.")
 
-            # Create an index array for plotting
+            
             index = np.arange(len(signal))
 
-            # Plot the normalized signal
+            
             plt.figure(figsize=(10, 6))
             plt.plot(index, normalized_signal, label='Normalized Signal', linewidth=3, color='black')
             plt.title(f"Normalized Signal (Range: {range_type})")
@@ -402,19 +405,18 @@ def normalize():
         except ValueError as e:
             messagebox.showerror("Error", str(e))
 
-    # Clear previous widgets
+
     for widget in root.winfo_children():
         widget.destroy()
-
-    # Create a label and a combobox for the user to select the range
+    
     label = Label(root, text="Select Normalization Range", font=("Arial", 14))
     label.pack(pady=10)
 
     combobox = Combobox(root, values=["[-1, 1]", "[0, 1]"], font=("Arial", 12))
-    combobox.set("[-1, 1]")  # Set default value
+    combobox.set("[-1, 1]")  
     combobox.pack(pady=10)
 
-    # Create a submit button
+    
     submit_button = Button(root, text="Submit", font=("Arial", 14), bg="lightblue", command=on_submit)
     submit_button.pack(pady=20)
 def browse_and_read_signal_file():
@@ -427,11 +429,11 @@ def browse_and_read_signal_file():
 
         if not file_path:
             messagebox.showinfo("No File Selected", "Please select a valid file.")
-            return None, None  # Return None to indicate no valid selection
+            return None, None  
 
-        # Read signal data from the file
+        
         with open(file_path, 'r') as f:
-            for _ in range(3):  # Skip the first 3 lines
+            for _ in range(3):  
                 next(f)
             time, amplitude = [], []
             for line in f:
@@ -439,7 +441,7 @@ def browse_and_read_signal_file():
                 time.append(t)
                 amplitude.append(a)
 
-        return np.array(time), np.array(amplitude)  # Return as NumPy arrays
+        return np.array(time), np.array(amplitude)  
 
     except FileNotFoundError:
         messagebox.showerror("Error", "The specified file was not found.")
@@ -452,23 +454,23 @@ def browse_and_read_signal_file():
     
 def accumulate_signal():
     try:
-        # Clear the main window to display the new page
+        
         for widget in root.winfo_children():
             widget.destroy()
 
         time, amplitude = browse_and_read_signal_file()
     
-        # Convert to NumPy arrays to ensure they have the right type for operations
+        
         time = np.array(time, dtype=np.float64)
         amplitude = np.array(amplitude, dtype=np.float64)
 
-        # Compute cumulative sum of the amplitude
+
         modified_amplitude = np.cumsum(amplitude)
 
-        # Create a figure with two subplots (side-by-side)
+        
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
 
-        # Original signal
+        
         ax1.plot(time, amplitude, label='Original Signal', color='blue')
         ax1.set_title('Original Signal')
         ax1.set_xlabel('Time')
@@ -476,7 +478,7 @@ def accumulate_signal():
         ax1.grid(True)
         ax1.legend()
 
-        # Accumulated signal
+        
         ax2.plot(time, modified_amplitude, label='Accumulated Signal', color='green')
         ax2.set_title('Accumulated Signal')
         ax2.set_xlabel('Time')
@@ -484,7 +486,7 @@ def accumulate_signal():
         ax2.grid(True)
         ax2.legend()
 
-        # Embed the figure in the Tkinter window
+    
         canvas = FigureCanvasTkAgg(fig, master=root)
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
@@ -492,7 +494,7 @@ def accumulate_signal():
         compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
         compare_button.pack(pady=20)
 
-        # Back Button to return to Task 1 Sub Tasks menu
+        
         back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
         back_button.pack(pady=20)
 
@@ -503,26 +505,22 @@ def accumulate_signal():
 
 def square_signal():
     try:
-        # Clear the main window to display the new page
+        
         for widget in root.winfo_children():
             widget.destroy()
 
         time, amplitude = browse_and_read_signal_file()
-   
-        # Square the signal
-        #squared_amplitude = np.array(amplitude) ** 2
-        # Convert to NumPy arrays to ensure they have the right type for operations
-        time = np.array(time, dtype=np.float64)
+
         amplitude = np.array(amplitude, dtype=np.float64)
 
-        # Square the signal
+        
         modified_amplitude = amplitude ** 2
 
 
-        # Create a figure with two subplots (side-by-side)
+    
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
 
-        # Original signal
+        
         ax1.plot(time, amplitude, label='Original Signal', color='blue')
         ax1.set_title('Original Signal')
         ax1.set_xlabel('Time')
@@ -530,7 +528,7 @@ def square_signal():
         ax1.grid(True)
         ax1.legend()
 
-        # Squared signal
+        
         ax2.plot(time, modified_amplitude, label='Squared Signal', color='green')
         ax2.set_title('Squared Signal')
         ax2.set_xlabel('Time')
@@ -538,7 +536,7 @@ def square_signal():
         ax2.grid(True)
         ax2.legend()
 
-        # Embed the figure in the Tkinter window
+        
         canvas = FigureCanvasTkAgg(fig, master=root)
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
@@ -546,7 +544,7 @@ def square_signal():
         compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
         compare_button.pack(pady=20)
 
-        # Back Button to return to Task 1 Sub Tasks menu
+        
         back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
         back_button.pack(pady=20)
 
@@ -660,11 +658,221 @@ def menue():
      button6.pack(pady=10)
      button6 = tk.Button(rep_window, text="accumilate signals", command=accumulate_signal)
      button6.pack(pady=10)
+     button7 = tk.Button(rep_window, text="quant signals", command=open_choice_menu)
+     button7.pack(pady=10)
 
-# Main window properties
+def QuantizationTest1(file_name,Your_EncodedValues,Your_QuantizedValues):
+    expectedEncodedValues=[]
+    expectedQuantizedValues=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V2=str(L[0])
+                V3=float(L[1])
+                expectedEncodedValues.append(V2)
+                expectedQuantizedValues.append(V3)
+                line = f.readline()
+            else:
+                break
+    if( (len(Your_EncodedValues)!=len(expectedEncodedValues)) or (len(Your_QuantizedValues)!=len(expectedQuantizedValues))):
+        print("QuantizationTest1 Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_EncodedValues)):
+        if(Your_EncodedValues[i]!=expectedEncodedValues[i]):
+            print("QuantizationTest1 Test case failed, your EncodedValues have different EncodedValues from the expected one") 
+            return
+    for i in range(len(expectedQuantizedValues)):
+        if abs(Your_QuantizedValues[i] - expectedQuantizedValues[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest1 Test case failed, your QuantizedValues have different values from the expected one") 
+            return
+    print("QuantizationTest1 Test case passed successfully")
+
+def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_QuantizedValues,Your_SampledError):
+    expectedIntervalIndices=[]
+    expectedEncodedValues=[]
+    expectedQuantizedValues=[]
+    expectedSampledError=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==4:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=str(L[1])
+                V3=float(L[2])
+                V4=float(L[3])
+                expectedIntervalIndices.append(V1)
+                expectedEncodedValues.append(V2)
+                expectedQuantizedValues.append(V3)
+                expectedSampledError.append(V4)
+                line = f.readline()
+            else:
+                break
+    if(len(Your_IntervalIndices)!=len(expectedIntervalIndices)
+     or len(Your_EncodedValues)!=len(expectedEncodedValues)
+      or len(Your_QuantizedValues)!=len(expectedQuantizedValues)
+      or len(Your_SampledError)!=len(expectedSampledError)):
+        print("QuantizationTest2 Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_IntervalIndices)):
+        if(Your_IntervalIndices[i]!=expectedIntervalIndices[i]):
+            print("QuantizationTest2 Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(Your_EncodedValues)):
+        if(Your_EncodedValues[i]!=expectedEncodedValues[i]):
+            print("QuantizationTest2 Test case failed, your EncodedValues have different EncodedValues from the expected one") 
+            return
+        
+    for i in range(len(expectedQuantizedValues)):
+        if abs(Your_QuantizedValues[i] - expectedQuantizedValues[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest2 Test case failed, your QuantizedValues have different values from the expected one") 
+            return
+    for i in range(len(expectedSampledError)):
+        if abs(Your_SampledError[i] - expectedSampledError[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one") 
+            return
+    print("QuantizationTest2 Test case passed successfully")
+
+def quantize_signal(signal, num_levels):
+    min_val, max_val = min(signal), max(signal)
+
+    # Calculate quantization levels as midpoints of each interval
+    quantization_levels = np.linspace(min_val, max_val, num_levels + 1)
+    quantization_levels = (quantization_levels[:-1] + quantization_levels[1:]) / 2
+    num_bits = int(np.ceil(np.log2(num_levels)))
+
+    # Create binary codes for each level
+    binary_codes = [format(i, f'0{num_bits}b') for i in range(num_levels)]
+
+    # Initialize lists to store results
+    quantized_signal = []
+    encoded_signal = []
+    interval_indices = []
+
+    # Quantize the signal
+    for value in signal:
+        # Find the closest quantization level
+        idx = (np.abs(quantization_levels - value)).argmin()
+        interval_indices.append(idx)
+        quantized_value = quantization_levels[idx]
+        quantized_signal.append(quantized_value)
+        encoded_signal.append(binary_codes[idx])
+
+    # Calculate error and average power error
+    error =  np.array(quantized_signal) - np.array(signal)
+    avg_power_error = np.mean(error ** 2)
+
+    return interval_indices, encoded_signal, quantized_signal, error, avg_power_error
+
+# Plotting function
+def display_plot(interval_indices, encoded_values, quantized_values, error):
+    root = tk.Tk()
+    root.title("Values Table")
+
+    # Create a Treeview widget
+    tree = ttk.Treeview(root, columns=("Interval Index", "Encoded Value", "Quantized Value", "Error"), show="headings")
+
+    # Define headings
+    tree.heading("Interval Index", text="Interval Index")
+    tree.heading("Encoded Value", text="Encoded Value")
+    tree.heading("Quantized Value", text="Quantized Value")
+    tree.heading("Error", text="Error")
+
+    # Set column widths
+    tree.column("Interval Index", width=120)
+    tree.column("Encoded Value", width=120)
+    tree.column("Quantized Value", width=120)
+    tree.column("Error", width=120)
+
+    # Insert data into the treeview
+    for i in range(len(interval_indices)):
+        tree.insert("", "end", values=(interval_indices[i], encoded_values[i], quantized_values[i], error[i]))
+
+    # Pack the treeview into the window
+    tree.pack(expand=True, fill="both")
+
+# Menu for choosing levels or bits
+def open_choice_menu():
+    rep_window = tk.Toplevel()
+    rep_window.title("Quantization of Signals")
+    rep_window.geometry("300x200")
+
+    # Initialize choice_var with a default value to make sure it updates
+    choice_var = IntVar(value=1)
+
+    # Frame for radio buttons
+    radio_frame = tk.Frame(rep_window)
+    radio_frame.pack(pady=20)
+
+    # Define the radio buttons with choice_var variable and values 1 and 2
+    Radiobutton(radio_frame, text="Number of Levels", variable=choice_var, value=1).pack(anchor="center")
+    Radiobutton(radio_frame, text="Number of Bits", variable=choice_var, value=2).pack(anchor="center")
+
+    def confirm_choice():
+        choice = choice_var.get()  # Get current value of choice_var
+        print("Selected choice:", choice)  # Debug print to verify selection
+        rep_window.destroy()
+
+        #for widget in root.winfo_children():
+            #widget.destroy()
+
+        levels = None  # Initialize `levels` here to avoid `UnboundLocalError`
+        
+        if choice == 1:
+            user_input = simpledialog.askinteger("Input", "Enter the number of levels:")
+            levels = user_input
+        elif choice == 2:
+            user_input = simpledialog.askinteger("Input", "Enter the number of bits:")
+            levels = 2 ** user_input if user_input else None
+            bit_length = user_input
+            print("Number of bits:", user_input)
+            print("Number of levels:", levels)
+
+        if levels is not None:
+            process_quantization(levels)
+        else:
+            messagebox.showwarning("Warning", "Invalid input.")
+
+    tk.Button(rep_window, text="Confirm", command=confirm_choice).pack(pady=10)
+# Main quantization processing function
+def process_quantization(levels):
+    ind, signal = browse_and_read_signal_file()  # Load the signal from file
+    print("Original Signal:", signal)
+
+    # Quantize signal and get results
+    interval_indices, encoded_values, quantized_values, error, avg_power_error = quantize_signal(signal, levels)
+    one_based_interval_index = [x + 1 for x in interval_indices]
+    print(interval_indices)
+    print(encoded_values)
+    print(quantized_values)
+    print(error)
+    # Display plot
+    display_plot(interval_indices, encoded_values, quantized_values, error)
+
+    # Save results to files
+    QuantizationTest1("D:\\uni\\DSP\\DSP_tasks\\task3\\Quan1_Out.txt", encoded_values, quantized_values)
+    QuantizationTest2("D:\\uni\\DSP\\DSP_tasks\\task3\\Quan2_Out.txt",one_based_interval_index,  encoded_values, quantized_values, error)
 root = tk.Tk()
 root.title("Tasks")
-root.geometry("900x600")  # Adjusted size to fit everything properly
+root.geometry("900x600")  
 
 task_1_button = tk.Button(root, text="main menue", command=task1_sub_tasks)
 task_1_button.pack(pady=20)
