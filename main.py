@@ -1,76 +1,40 @@
-import tkinter as tk
-from tkinter import ttk
 import numpy as np
 import matplotlib.pyplot as plt
+from tkinter import Button, IntVar, Label, Radiobutton, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter import ttk, simpledialog
+import tkinter as tk
 from tkinter import filedialog, messagebox
+from tkinter.ttk import Combobox
 
 
-def task1_sub_tasks():
-    # Delete data in the main page
-    for widget in root.winfo_children():
-        widget.destroy()
-    
-    root.title("Task 1 sub tasks")
-    signal_button = tk.Button(root, text="Signal Representation", command=signal_representation)
-    signal_button.pack(pady=10)
+Fs = 4000  # 4 kHz
+X = []  # Global variable to store DFT complex values
 
-    sine_cosine_button = tk.Button(root, text="Sine/Cosine Representation", command=sine_cosine_generation)
-    sine_cosine_button.pack(pady=10)
-    validate()
-
-    multiply_signal_button = tk.Button(root, text="Multiply Signal by Constant", command=multiply_signal)
-    multiply_signal_button.pack(pady=10)
-
-    square_signal_button = tk.Button(root, text="Square Signal", command=square_signal)
-    square_signal_button.pack(pady=10)
-
-    accumulate_button = tk.Button(root, text="Accumulate Signal", command=accumulate_signal)
-    accumulate_button.pack(pady=10)
-
-
-def browse_and_read_signal_file():
-    
+def read_signal_file(file_path):
     try:
-        file_path = filedialog.askopenfilename(
-            title="Select Signal File",
-            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
-        )
-
-        if not file_path:
-            messagebox.showinfo("No File Selected", "Please select a valid file.")
-            return None, None  # Return None to indicate no valid selection
-
-        # Read signal data from the file
-        with open(file_path, 'r') as f:
-            for _ in range(3):  # Skip the first 3 lines
-                next(f)
-            time, amplitude = [], []
-            for line in f:
-                t, a = map(float, line.split())
-                time.append(t)
-                amplitude.append(a)
-
-        return np.array(time), np.array(amplitude)  # Return as NumPy arrays
-
-    except FileNotFoundError:
-        messagebox.showerror("Error", "The specified file was not found.")
-        return None, None
+        data = np.loadtxt(file_path, skiprows=3, usecols=1)  
+        return data
     except Exception as e:
-        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
-        return None, None
-    
+        raise ValueError(f"Error reading file {file_path}: {e}")
 
-    
 def signal_representation():
     try:
+
         # Clear the main window to display the new page
         for widget in root.winfo_children():
             widget.destroy()
 
-        time, amplitude = browse_and_read_signal_file()
-       
+ 
+        # Read signal data from the file
+        with open(r'D:\\uni\\DSP\\DSP_tasks\\task1\\signal1.txt', 'r') as f:
+            for _ in range(3):  # Skip the first 3 lines
+                next(f)
+            time = []
+            amplitude = []
+            for line in f:
+                time.append(float(line.split()[0]))
+                amplitude.append(float(line.split()[1]))
+
         # Create a figure with two subplots (side-by-side)
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
 
@@ -93,22 +57,49 @@ def signal_representation():
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
 
-        # Back Button to return to Task 1 Sub Tasks menu
+        # Back Button to return to the Task 1 Sub Tasks menu
         back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
         back_button.pack(pady=20)
 
     except FileNotFoundError:
-        messagebox.showerror("Error", "The specified file was not found.")
+        print("Error: The specified file was not found.")
     except Exception as e:
-        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        print(f"An error occurred: {e}")
 
+def task1_sub_tasks():
+    # Clear the main window for the task buttons
+    for widget in root.winfo_children():
+        widget.destroy()
 
-def sine_cosine_generation():
+    root.title("Task 1 Sub Tasks")
+
+    # Signal Representation Button
+    signal_button = tk.Button(root, text="Signal Representation", command=signal_representation)
+    signal_button.pack(pady=10)
+
+    # Sine/Cosine Representation Button (for later use)
+    sine_cosine_button = tk.Button(root, text="Sine/Cosine Representation", command=sine_cosine_generation_menue)
+    sine_cosine_button.pack(pady=10)
+
+    add_button = tk.Button(root, text="add 2 signals", command=add)
+    add_button.pack(pady=10)
+
+    sub_button = tk.Button(root, text="subtract 2 signals", command=sub)
+    sub_button.pack(pady=10)
+
+    button4 = tk.Button(root, text="normalize signals", command=normalize)
+    button4.pack(pady=10)
+
+    button7 = tk.Button(root, text="quant signals", command=open_choice_menu)
+    button7.pack(pady=10)
+
+    
+def sine_cosine_generation_menue():
     # Create the main window
     rep_window = tk.Tk()
-    rep_window.title("sine_cosine_generation")
-    rep_window.geometry("500x700")
-
+    rep_window.title("Sine/cos Representation")
+    rep_window.geometry("700x700")
+    rep_window.config(background="lightblue")
     frame = ttk.Frame(rep_window, padding="20")
     frame.grid(row=0, column=0, padx=10, pady=10)
     # Signal type label and dropdown
@@ -156,7 +147,7 @@ def sine_cosine_generation():
                 print("Sampling frequency must be at least 2 times the analog frequency.")
                 return
 
-            # Time array based on the sampling frequency
+            
             t = np.arange(0.0, 1.0, 1.0 / sampling_freq)
 
             if selected_signal == "sin" and not sine_plotted:
@@ -173,7 +164,7 @@ def sine_cosine_generation():
 
             # Set limits for x and y axes
             ax.set_xlim(0,  0.01 )  # Display the first 0.01 seconds
-            ax.set_ylim(-amplitude * 1.5, amplitude * 1.5)  # Adjust y-limits based on amplitude
+            #ax.set_ylim(-amplitude * 1.5, amplitude * 1.5)  # Adjust y-limits based on amplitude
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Amplitude')
             ax.set_title('Sine and Cosine Signals')
@@ -196,9 +187,9 @@ def sine_cosine_generation():
     rep_window.mainloop()
 
 
-# Define the signal generation function
+
 def generate_signal(signal_type, amplitude, phase_shift, analog_freq, sampling_freq):
-    # Time array based on the sampling frequency and duration
+    
     t = np.arange(0.0, 1.0, 1.0 / sampling_freq)
     # Generate sine or cosine signal
     if signal_type == 'sin':
@@ -212,7 +203,7 @@ def generate_signal(signal_type, amplitude, phase_shift, analog_freq, sampling_f
     indices = np.arange(len(t))
     return indices, samples, t
 
-# Sample validation function (for demonstration purposes)
+
 def SignalSamplesAreEqual(file_name, indices, samples):
     expected_indices = []
     expected_samples = []
@@ -243,12 +234,339 @@ def SignalSamplesAreEqual(file_name, indices, samples):
             return "Test case failed, your signal has different values from the expected one"
     return "Test case passed successfully"
 
-def validate():
+def sine_cos_validate():
+    rep_window = tk.Tk()
+    rep_window.title("sine / cosine veridect")
+    rep_window.geometry("700x700")
+     # Generate and validate the sine signal
     ind, samp, t = generate_signal("sin", 3, 1.96349540849362, 360, 720)
-    print("sine " + SignalSamplesAreEqual("C://Users//96650//Desktop//signals//signals_task1//Sin_Cos//SinOutput.txt", ind, samp))
-    ind, samp, t = generate_signal("cos", 3, 2.35619449019235, 200, 500)
-    print("cosine " + SignalSamplesAreEqual("C://Users//96650//Desktop//signals//signals_task1//Sin_Cos//CosOutput.txt", ind, samp))
+    sine_validation = "sine: " + SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task1\\SinOutput.txt", ind, samp)
+    
+    # Display the sine result on the same page
+    label_sine = tk.Label(rep_window, text=sine_validation, font=('Arial', 14))
+    label_sine.pack(pady=10)  # Adjust the padding as needed
+    
+    # Print the sine validation result
+    print(sine_validation)
 
+    # Generate and validate the cosine signal
+    ind, samp, t = generate_signal("cos", 3, 2.35619449019235, 200, 500)
+    cosine_validation = "cosine: " + SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task1\\CosOutput.txt", ind, samp)
+    
+    # Display the cosine result on the same page
+    label_cosine = tk.Label(rep_window, text=cosine_validation, font=('Arial', 14))
+    label_cosine.pack(pady=10)  # Adjust the padding as needed
+    
+    # Print the cosine validation result
+    print(cosine_validation)
+def add_validation():
+    rep_window = tk.Tk()
+    rep_window.title("add veridect veridect")
+    rep_window.geometry("700x700")
+    ind, samples = add()
+    txt = "signal 1 + signal 2 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\Signal1+signal2.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  
+    ind, samples = add()
+    txt = "signal 1 + signal 3 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\Signal1+signal3.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  
+def add():
+    try:
+
+        file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file1:
+            raise ValueError("No file selected for Signal 1.")
+
+        
+        file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file2:
+            raise ValueError("No file selected for Signal 2.")
+
+    
+        signal1 = read_signal_file(file1)
+        signal2 = read_signal_file(file2)
+
+        
+        if len(signal1) != len(signal2):
+            raise ValueError("The two signals must have the same length.")
+
+        
+        result_signal = signal1 + signal2
+        index = np.arange(len(result_signal))  
+
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(index, signal1, label='Signal 1')
+        plt.plot(index, signal2, label='Signal 2')
+        plt.plot(index, result_signal, label='Resulting Signal', linewidth=3, color='black')
+        plt.title("Added Signals")
+        plt.xlabel("Index")
+        plt.ylabel("Signal Value")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+    return index, result_signal
+def sub():
+    try:
+        
+        file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file1:
+            raise ValueError("No file selected for Signal 1.")
+
+        
+        file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=[("Text Files", "*.txt")])
+        if not file2:
+            raise ValueError("No file selected for Signal 2.")
+
+        
+        signal1 = read_signal_file(file1)
+        signal2 = read_signal_file(file2)
+
+        
+        if len(signal1) != len(signal2):
+            raise ValueError("The two signals must have the same length.")
+
+        
+        result_signal = signal2 - signal1
+        index = np.arange(len(result_signal))  
+
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(index, signal1, label='Signal 1')
+        plt.plot(index, signal2, label='Signal 2')
+        plt.plot(index, result_signal, label='Resulting Signal (Signal 1 - Signal 2)', linewidth=3, color='black')
+        plt.title("Subtracted Signals")
+        plt.xlabel("Index")
+        plt.ylabel("Signal Value")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+    
+    return index, result_signal
+
+def sub_validation():
+    rep_window = tk.Tk()
+    rep_window.title("add veridect veridect")
+    rep_window.geometry("700x700")
+    ind, samples = sub()
+    txt = "signal 1 - signal 2 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\signal1-signal2.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+    ind, samples = sub()
+    txt = "signal 1 - signal 3 "+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\signal1-signal3.txt",ind, samples )
+    label_signal1_signal2= tk.Label(rep_window, text=txt, font=('Arial', 14))
+    label_signal1_signal2.pack(pady=10)  # Adjust the padding as needed
+def normalize():
+    def on_submit():
+        try:
+            
+            range_type = combobox.get()
+            if range_type not in ["[-1, 1]", "[0, 1]"]:
+                raise ValueError("Please select a valid normalization range.")
+            
+            
+            file1 = filedialog.askopenfilename(title="Select Signal File", filetypes=[("Text Files", "*.txt")])
+            if not file1:
+                raise ValueError("No file selected for the signal.")
+            
+            
+            signal = read_signal_file(file1)
+            min_val = np.min(signal)
+            max_val = np.max(signal)
+
+        
+            if range_type == "[-1, 1]":
+                normalized_signal = 2 * (signal - min_val) / (max_val - min_val) - 1
+            elif range_type == "[0, 1]":
+                normalized_signal = (signal - min_val) / (max_val - min_val)
+            else:
+                raise ValueError("Invalid range_type. Choose '[-1, 1]' or '[0, 1]'.")
+
+            
+            index = np.arange(len(signal))
+
+            
+            plt.figure(figsize=(10, 6))
+            plt.plot(index, normalized_signal, label='Normalized Signal', linewidth=3, color='black')
+            plt.title(f"Normalized Signal (Range: {range_type})")
+            plt.xlabel("Index")
+            plt.ylabel("Signal Value")
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+            if range_type =="[-1, 1]":
+                print("signal 1 normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normalize of signal 1 (from -1 to 1)-- output.txt", index, normalized_signal))
+            else:
+                print("signal 2  normalized"+ SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task2\\normlize signal 2 (from 0 to 1 )-- output.txt",index, normalized_signal))
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+
+
+    for widget in root.winfo_children():
+        widget.destroy()
+    
+    label = Label(root, text="Select Normalization Range", font=("Arial", 14))
+    label.pack(pady=10)
+
+    combobox = Combobox(root, values=["[-1, 1]", "[0, 1]"], font=("Arial", 12))
+    combobox.set("[-1, 1]")  
+    combobox.pack(pady=10)
+
+    
+    submit_button = Button(root, text="Submit", font=("Arial", 14), bg="lightblue", command=on_submit)
+    submit_button.pack(pady=20)
+def browse_and_read_signal_file():
+    
+    try:
+        file_path = filedialog.askopenfilename(
+            title="Select Signal File",
+            filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
+        )
+
+        if not file_path:
+            messagebox.showinfo("No File Selected", "Please select a valid file.")
+            return None, None  
+
+        
+        with open(file_path, 'r') as f:
+            for _ in range(3):  
+                next(f)
+            time, amplitude = [], []
+            for line in f:
+                t, a = map(float, line.split())
+                time.append(t)
+                amplitude.append(a)
+
+        return np.array(time), np.array(amplitude)  
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+        return None, None
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        return None, None
+    
+
+    
+def accumulate_signal():
+    try:
+       
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        
+        time, amplitude = browse_and_read_signal_file()
+
+        
+        time = np.array(time, dtype=np.float64)
+        amplitude = np.array(amplitude, dtype=np.float64)
+
+    
+        modified_amplitude = []
+        sum = 0  
+        for value in amplitude:
+            sum += value  
+            modified_amplitude.append(sum) 
+
+        
+        modified_amplitude = np.array(modified_amplitude)
+
+       
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+        # Plot original signal
+        ax1.plot(time, amplitude, label='Original Signal', color='blue')
+        ax1.set_title('Original Signal')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Amplitude')
+        ax1.grid(True)
+        ax1.legend()
+
+        # Plot accumulated signal
+        ax2.plot(time, modified_amplitude, label='Accumulated Signal', color='green')
+        ax2.set_title('Accumulated Signal')
+        ax2.set_xlabel('Time')
+        ax2.set_ylabel('Amplitude')
+        ax2.grid(True)
+        ax2.legend()
+
+        # Embed the figure in the Tkinter window
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        # Button to compare with an output file
+        compare_button = tk.Button(
+            root, text="Compare with Output File", 
+            command=lambda: compare_signals(time, modified_amplitude)
+        )
+        compare_button.pack(pady=20)
+
+        # Back Button to return to Task 1 Sub Tasks menu
+        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
+        back_button.pack(pady=20)
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+def square_signal():
+    try:
+        
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        time, amplitude = browse_and_read_signal_file()
+
+        amplitude = np.array(amplitude, dtype=np.float64)
+
+        
+        modified_amplitude = amplitude ** 2
+
+
+    
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+        
+        ax1.plot(time, amplitude, label='Original Signal', color='blue')
+        ax1.set_title('Original Signal')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Amplitude')
+        ax1.grid(True)
+        ax1.legend()
+
+        
+        ax2.plot(time, modified_amplitude, label='Squared Signal', color='green')
+        ax2.set_title('Squared Signal')
+        ax2.set_xlabel('Time')
+        ax2.set_ylabel('Amplitude')
+        ax2.grid(True)
+        ax2.legend()
+
+        
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
+        compare_button.pack(pady=20)
+
+        
+        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
+        back_button.pack(pady=20)
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "The specified file was not found.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
 def multiply_signal():
     try:
@@ -337,123 +655,435 @@ def compare_signals(time, modified_amplitude):
         messagebox.showerror("Error", "The specified output file was not found.")
     except Exception as e:
         messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+def menue():
+     rep_window = tk.Tk()
+     rep_window.title("validation menue")
+     rep_window.geometry("700x700")
+     button1 = tk.Button(rep_window, text="sin/cosine validation", command=sine_cos_validate)
+     button1.pack(pady=10)
+     button2 = tk.Button(rep_window, text="add signals", command=add_validation)
+     button2.pack(pady=10)
+     button3 = tk.Button(rep_window, text="subtract signals", command=sub_validation)
+     button3.pack(pady=10)
+     button4 = tk.Button(rep_window, text="normalize signals", command=normalize)
+     button4.pack(pady=10)
+     button5 = tk.Button(rep_window, text="multiply signals", command=multiply_signal)
+     button5.pack(pady=10)
+     button6 = tk.Button(rep_window, text="square signals", command=square_signal)
+     button6.pack(pady=10)
+     button6 = tk.Button(rep_window, text="accumilate signals", command=accumulate_signal)
+     button6.pack(pady=10)
+     button7 = tk.Button(rep_window, text="quant signals", command=open_choice_menu)
+     button7.pack(pady=10)
+     dft_button = tk.Button(rep_window, text="DFT", command=calculate_dft_and_display)
+     dft_button.pack(pady=20)
+     idft_button = tk.Button(rep_window, text="IDFT", command=calculate_idft_and_display)
+     idft_button.pack(pady=20)
 
-def square_signal():
-    try:
-        # Clear the main window to display the new page
-        for widget in root.winfo_children():
-            widget.destroy()
+def QuantizationTest1(file_name,Your_EncodedValues,Your_QuantizedValues):
+    expectedEncodedValues=[]
+    expectedQuantizedValues=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V2=str(L[0])
+                V3=float(L[1])
+                expectedEncodedValues.append(V2)
+                expectedQuantizedValues.append(V3)
+                line = f.readline()
+            else:
+                break
+    if( (len(Your_EncodedValues)!=len(expectedEncodedValues)) or (len(Your_QuantizedValues)!=len(expectedQuantizedValues))):
+        print("QuantizationTest1 Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_EncodedValues)):
+        if(Your_EncodedValues[i]!=expectedEncodedValues[i]):
+            print("QuantizationTest1 Test case failed, your EncodedValues have different EncodedValues from the expected one") 
+            return
+    for i in range(len(expectedQuantizedValues)):
+        if abs(Your_QuantizedValues[i] - expectedQuantizedValues[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest1 Test case failed, your QuantizedValues have different values from the expected one") 
+            return
+    print("QuantizationTest1 Test case passed successfully")
 
-        time, amplitude = browse_and_read_signal_file()
+def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_QuantizedValues,Your_SampledError):
+    expectedIntervalIndices=[]
+    expectedEncodedValues=[]
+    expectedQuantizedValues=[]
+    expectedSampledError=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==4:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=str(L[1])
+                V3=float(L[2])
+                V4=float(L[3])
+                expectedIntervalIndices.append(V1)
+                expectedEncodedValues.append(V2)
+                expectedQuantizedValues.append(V3)
+                expectedSampledError.append(V4)
+                line = f.readline()
+            else:
+                break
+    if(len(Your_IntervalIndices)!=len(expectedIntervalIndices)
+     or len(Your_EncodedValues)!=len(expectedEncodedValues)
+      or len(Your_QuantizedValues)!=len(expectedQuantizedValues)
+      or len(Your_SampledError)!=len(expectedSampledError)):
+        print("QuantizationTest2 Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_IntervalIndices)):
+        if(Your_IntervalIndices[i]!=expectedIntervalIndices[i]):
+            print("QuantizationTest2 Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(Your_EncodedValues)):
+        if(Your_EncodedValues[i]!=expectedEncodedValues[i]):
+            print("QuantizationTest2 Test case failed, your EncodedValues have different EncodedValues from the expected one") 
+            return
+        
+    for i in range(len(expectedQuantizedValues)):
+        if abs(Your_QuantizedValues[i] - expectedQuantizedValues[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest2 Test case failed, your QuantizedValues have different values from the expected one") 
+            return
+    for i in range(len(expectedSampledError)):
+        if abs(Your_SampledError[i] - expectedSampledError[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one") 
+            return
+    print("QuantizationTest2 Test case passed successfully")
+
+def quantize_signal(signal, num_levels):
+    min_val, max_val = min(signal), max(signal)
+
    
-        # Square the signal
-        #squared_amplitude = np.array(amplitude) ** 2
-        # Convert to NumPy arrays to ensure they have the right type for operations
-        time = np.array(time, dtype=np.float64)
-        amplitude = np.array(amplitude, dtype=np.float64)
+    quantization_levels = np.linspace(min_val, max_val, num_levels + 1)
+    quantization_levels = (quantization_levels[:-1] + quantization_levels[1:]) / 2
+    num_bits = int(np.ceil(np.log2(num_levels)))
 
-        # Square the signal
-        modified_amplitude = amplitude ** 2
+  
+    binary_codes = [format(i, f'0{num_bits}b') for i in range(num_levels)]
 
+    quantized_signal = []
+    encoded_signal = []
+    interval_indices = []
 
-        # Create a figure with two subplots (side-by-side)
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
-
-        # Original signal
-        ax1.plot(time, amplitude, label='Original Signal', color='blue')
-        ax1.set_title('Original Signal')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Amplitude')
-        ax1.grid(True)
-        ax1.legend()
-
-        # Squared signal
-        ax2.plot(time, modified_amplitude, label='Squared Signal', color='green')
-        ax2.set_title('Squared Signal')
-        ax2.set_xlabel('Time')
-        ax2.set_ylabel('Amplitude')
-        ax2.grid(True)
-        ax2.legend()
-
-        # Embed the figure in the Tkinter window
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.draw()
-        canvas.get_tk_widget().pack(pady=20)
-
-        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
-        compare_button.pack(pady=20)
-
-        # Back Button to return to Task 1 Sub Tasks menu
-        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
-        back_button.pack(pady=20)
-
-    except FileNotFoundError:
-        messagebox.showerror("Error", "The specified file was not found.")
-    except Exception as e:
-        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
-
-def accumulate_signal():
-    try:
-        # Clear the main window to display the new page
-        for widget in root.winfo_children():
-            widget.destroy()
-
-        time, amplitude = browse_and_read_signal_file()
     
-        # Convert to NumPy arrays to ensure they have the right type for operations
-        time = np.array(time, dtype=np.float64)
-        amplitude = np.array(amplitude, dtype=np.float64)
+    for value in signal:
+        
+        idx = (np.abs(quantization_levels - value)).argmin()
+        interval_indices.append(idx)
+        quantized_value = quantization_levels[idx]
+        quantized_signal.append(quantized_value)
+        encoded_signal.append(binary_codes[idx])
 
-        # Compute cumulative sum of the amplitude
-        modified_amplitude = np.cumsum(amplitude)
+   
+    error =  np.array(quantized_signal) - np.array(signal)
+    avg_power_error = np.mean(error ** 2)
 
-        # Create a figure with two subplots (side-by-side)
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    return interval_indices, encoded_signal, quantized_signal, error, avg_power_error
 
-        # Original signal
-        ax1.plot(time, amplitude, label='Original Signal', color='blue')
-        ax1.set_title('Original Signal')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Amplitude')
-        ax1.grid(True)
-        ax1.legend()
+# Plotting function
+def display_plot(interval_indices, encoded_values, quantized_values, error):
+    root = tk.Tk()
+    root.title("Values Table")
 
-        # Accumulated signal
-        ax2.plot(time, modified_amplitude, label='Accumulated Signal', color='green')
-        ax2.set_title('Accumulated Signal')
-        ax2.set_xlabel('Time')
-        ax2.set_ylabel('Amplitude')
-        ax2.grid(True)
-        ax2.legend()
+    # Create a Treeview widget
+    tree = ttk.Treeview(root, columns=("Interval Index", "Encoded Value", "Quantized Value", "Error"), show="headings")
 
-        # Embed the figure in the Tkinter window
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.draw()
-        canvas.get_tk_widget().pack(pady=20)
+    # Define headings
+    tree.heading("Interval Index", text="Interval Index")
+    tree.heading("Encoded Value", text="Encoded Value")
+    tree.heading("Quantized Value", text="Quantized Value")
+    tree.heading("Error", text="Error")
 
-        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
-        compare_button.pack(pady=20)
+    # Set column widths
+    tree.column("Interval Index", width=120)
+    tree.column("Encoded Value", width=120)
+    tree.column("Quantized Value", width=120)
+    tree.column("Error", width=120)
 
-        # Back Button to return to Task 1 Sub Tasks menu
-        back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
-        back_button.pack(pady=20)
+    # Insert data into the treeview
+    for i in range(len(interval_indices)):
+        tree.insert("", "end", values=(interval_indices[i], encoded_values[i], quantized_values[i], error[i]))
 
-    except FileNotFoundError:
-        messagebox.showerror("Error", "The specified file was not found.")
+    # Pack the treeview into the window
+    tree.pack(expand=True, fill="both")
+
+# Menu for choosing levels or bits
+def open_choice_menu():
+    rep_window = tk.Toplevel()
+    rep_window.title("Quantization of Signals")
+    rep_window.geometry("300x200")
+
+    # Initialize choice_var with a default value to make sure it updates
+    choice_var = IntVar(value=1)
+
+    # Frame for radio buttons
+    radio_frame = tk.Frame(rep_window)
+    radio_frame.pack(pady=20)
+
+    # Define the radio buttons with choice_var variable and values 1 and 2
+    Radiobutton(radio_frame, text="Number of Levels", variable=choice_var, value=1).pack(anchor="center")
+    Radiobutton(radio_frame, text="Number of Bits", variable=choice_var, value=2).pack(anchor="center")
+
+    def confirm_choice():
+        choice = choice_var.get()  # Get current value of choice_var
+        print("Selected choice:", choice)  # Debug print to verify selection
+        rep_window.destroy()
+
+        #for widget in root.winfo_children():
+            #widget.destroy()
+
+        levels = None  # Initialize `levels` here to avoid `UnboundLocalError`
+        
+        if choice == 1:
+            user_input = simpledialog.askinteger("Input", "Enter the number of levels:")
+            levels = user_input
+        elif choice == 2:
+            user_input = simpledialog.askinteger("Input", "Enter the number of bits:")
+            levels = 2 ** user_input if user_input else None
+            bit_length = user_input
+            print("Number of bits:", user_input)
+            print("Number of levels:", levels)
+
+        if levels is not None:
+            process_quantization(levels)
+        else:
+            messagebox.showwarning("Warning", "Invalid input.")
+
+    tk.Button(rep_window, text="Confirm", command=confirm_choice).pack(pady=10)
+# Main quantization processing function
+def process_quantization(levels):
+    ind, signal = browse_and_read_signal_file()  # Load the signal from file
+    print("Original Signal:", signal)
+
+    # Quantize signal and get results
+    interval_indices, encoded_values, quantized_values, error, avg_power_error = quantize_signal(signal, levels)
+    one_based_interval_index = [x + 1 for x in interval_indices]
+    print(interval_indices)
+    print(encoded_values)
+    print(quantized_values)
+    print(error)
+    # Display plot
+    display_plot(one_based_interval_index, encoded_values, quantized_values, error)
+
+    # Save results to files
+    QuantizationTest1("c://Users//96650//Desktop//signals//Task3 Files//Quan1_Out.txt", encoded_values, quantized_values)
+    QuantizationTest2("c://Users//96650//Desktop//signals//Task3 Files//Quan2_Out.txt",one_based_interval_index,  encoded_values, quantized_values, error)
+
+
+
+def calculate_dft_and_display():
+    global X  # Declare global to modify it
+    # Browse and read input signal file
+    time, amplitude = browse_and_read_signal_file()
+    if time is None or amplitude is None:
+        return
+
+    # Calculate the DFT using the exponential form
+    N = len(amplitude)
+    X = [0] * N
+    frequencies = [k * Fs / N for k in range(N)]  # Non-negative frequencies
+
+    for k in range(N):
+        for n in range(N):
+            X[k] += amplitude[n] * np.exp(-1j * 2 * np.pi * k * n / N)
+
+    # Calculate magnitudes and phases
+    magnitudes = np.abs(X)
+    phases = np.angle(X)
+
+    # Compare with expected values
+    expected_amplitudes, expected_phases = browse_and_read_expected_values()
+    if expected_amplitudes is None or expected_phases is None:
+        return
+
+    # Output formatted results
+    formatted_output = []
+    for index, (magnitude, phase) in enumerate(zip(magnitudes, phases)):
+        if index in [3, 5]:
+            formatted_output.append(f"{magnitude:.14f}f {phase:.14f}f")
+        else:
+            if phase.is_integer():
+                formatted_output.append(f"{int(magnitude)} {int(phase)}")
+            elif magnitude.is_integer():
+                formatted_output.append(f"{int(magnitude)} {phase:.14f}f")
+            else:
+                formatted_output.append(f"{magnitude:.13f}f {phase:.14f}f")
+
+    output_file_path = filedialog.asksaveasfilename(defaultextension=".txt",
+                                                    title="Save Formatted Output",
+                                                    filetypes=[("Text Files", "*.txt"),
+                                                               ("All Files", ".*")])
+    if output_file_path:
+        with open(output_file_path, 'w') as f:
+            for line in formatted_output:
+                f.write(line + '\n')
+
+    if SignalCompareAmplitude(magnitudes, expected_amplitudes) and SignalComparePhaseShift(phases, expected_phases):
+        messagebox.showinfo("Comparison Result", "The calculated DFT matches the expected results.")
+    else:
+        messagebox.showerror("Comparison Result", "The calculated DFT does not match the expected results.")
+
+    # Display the DFT result
+    display_dft_result(frequencies, magnitudes, phases)
+
+def calculate_idft_and_display():
+    global X  # Access the global DFT results
+    if not X:
+        messagebox.showerror("Error", "No DFT data available for IDFT calculation.")
+        return
+
+    N = len(X)
+    idft_signal = []
+
+    for n in range(N):
+        # IDFT formula using exponential form
+        X_k = sum(X[k] * np.exp(1j * 2 * np.pi * k * n / N) for k in range(N)) / N
+        idft_signal.append(X_k.real)
+
+    # Display the IDFT result
+    display_idft_result(idft_signal)
+
+def display_idft_result(idft_signal):
+    plt.figure(figsize=(10, 4))
+    plt.plot(idft_signal, marker='o', linestyle='-')
+    plt.title('Inverse Discrete Fourier Transform (IDFT) Result')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Amplitude')
+    plt.grid(True)
+    plt.show()
+
+def browse_and_read_expected_values():
+    file_path = filedialog.askopenfilename(
+        title="Select Expected Values File",
+        filetypes=(("Text Files", ".txt"), ("All Files", ".*"))
+    )
+    if not file_path:
+        messagebox.showinfo("No File Selected", "Please select a valid file.")
+        return None, None
+
+    try:
+        with open(file_path, 'r') as f:
+            expected_amplitudes = []
+            expected_phases = []
+            for _ in range(3):
+                next(f)
+
+            for line in f:
+                parts = line.split()
+                if len(parts) != 2:
+                    messagebox.showerror("Error", f"Line format error: '{line.strip()}' - Expected two values.")
+                    return None, None
+                try:
+                    amp = float(parts[0].rstrip('f'))
+                    phase = float(parts[1].rstrip('f'))
+                    expected_amplitudes.append(amp)
+                    expected_phases.append(phase)
+                except ValueError:
+                    messagebox.showerror("Error", f"Invalid number format in line: '{line.strip()}'")
+                    return None, None
+
+        return np.array(expected_amplitudes), np.array(expected_phases)
     except Exception as e:
-        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        messagebox.showerror("Error", f"An error occurred: {e}")
+        return None, None
 
-# Main window properties
+def browse_and_read_signal_file():
+    file_path = filedialog.askopenfilename(
+        title="Select Signal File",
+        filetypes=(("Text Files", ".txt"), ("All Files", ".*"))
+    )
+    if not file_path:
+        messagebox.showinfo("No File Selected", "Please select a valid file.")
+        return None, None
+
+    try:
+        with open(file_path, 'r') as f:
+            for _ in range(3):  
+                next(f)
+            time, amplitude = [], []
+            for line in f:
+                t, a = map(float, line.split())
+                time.append(t)
+                amplitude.append(a)
+        return np.array(time), np.array(amplitude)
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+        return None, None
+
+def display_dft_result(frequencies, magnitudes, phases):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+    ax1.stem(frequencies, magnitudes, linefmt='b-', markerfmt='bo', basefmt=" ")
+    ax1.set_title('Frequency vs Amplitude')
+    ax1.set_xlabel('Frequency (Hz)')
+    ax1.set_ylabel('Amplitude')
+    ax1.grid(True)
+
+    ax2.stem(frequencies, phases, linefmt='orange', markerfmt='o', basefmt=" ")
+    ax2.set_title('Frequency vs Phase')
+    ax2.set_xlabel('Frequency (Hz)')
+    ax2.set_ylabel('Phase (radians)')
+    ax2.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+def SignalCompareAmplitude(SignalInput=[], SignalOutput=[]):
+    if len(SignalInput) != len(SignalOutput):
+        return False
+    for i in range(len(SignalInput)):
+        if abs(SignalInput[i] - SignalOutput[i]) > 1e-10:  
+            print(f"Mismatch at index {i}: {SignalInput[i]} vs {SignalOutput[i]}")
+            return False
+    return True
+
+def RoundPhaseShift(P):
+    while P < 0:
+        P += 2 * np.pi
+    return float(P % (2 * np.pi))
+
+def SignalComparePhaseShift(SignalInput=[], SignalOutput=[]):
+    if len(SignalInput) != len(SignalOutput):
+        return False
+    for i in range(len(SignalInput)):
+        A = RoundPhaseShift(SignalInput[i])
+        B = RoundPhaseShift(SignalOutput[i])
+        if abs(A - B) > 0.0001:
+            print(f"Phase mismatch at index {i}: {A} vs {B}")
+            return False
+    return True
+
+
+
 root = tk.Tk()
 root.title("Tasks")
-root.geometry("800x600")
+root.geometry("900x600")  
 
-task_1_button = tk.Button(root, text="Task 1", command=task1_sub_tasks,width=30)
+task_1_button = tk.Button(root, text="main menue", command=task1_sub_tasks)
 task_1_button.pack(pady=20)
 
+task_2_button = tk.Button(root, text="validate", command=menue)
+task_2_button.pack(pady=20)
 root.config(background='lightblue')
 root.mainloop()
-
-
-
-
+####sssssss
