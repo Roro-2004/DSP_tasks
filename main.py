@@ -7,6 +7,9 @@ from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox
 
 
+Fs = 4000  # 4 kHz
+X = []  # Global variable to store DFT complex values
+
 def read_signal_file(file_path):
     try:
         data = np.loadtxt(file_path, skiprows=3, usecols=1)  
@@ -454,23 +457,31 @@ def browse_and_read_signal_file():
     
 def accumulate_signal():
     try:
-        
+       
         for widget in root.winfo_children():
             widget.destroy()
 
+        
         time, amplitude = browse_and_read_signal_file()
-    
+
         
         time = np.array(time, dtype=np.float64)
         amplitude = np.array(amplitude, dtype=np.float64)
 
-
-        modified_amplitude = np.cumsum(amplitude)
+    
+        modified_amplitude = []
+        sum = 0  
+        for value in amplitude:
+            sum += value  
+            modified_amplitude.append(sum) 
 
         
+        modified_amplitude = np.array(modified_amplitude)
+
+       
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
 
-        
+        # Plot original signal
         ax1.plot(time, amplitude, label='Original Signal', color='blue')
         ax1.set_title('Original Signal')
         ax1.set_xlabel('Time')
@@ -478,7 +489,7 @@ def accumulate_signal():
         ax1.grid(True)
         ax1.legend()
 
-        
+        # Plot accumulated signal
         ax2.plot(time, modified_amplitude, label='Accumulated Signal', color='green')
         ax2.set_title('Accumulated Signal')
         ax2.set_xlabel('Time')
@@ -486,15 +497,19 @@ def accumulate_signal():
         ax2.grid(True)
         ax2.legend()
 
-    
+        # Embed the figure in the Tkinter window
         canvas = FigureCanvasTkAgg(fig, master=root)
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
 
-        compare_button = tk.Button(root, text="Compare with Output File", command=lambda: compare_signals(time, modified_amplitude ))
+        # Button to compare with an output file
+        compare_button = tk.Button(
+            root, text="Compare with Output File", 
+            command=lambda: compare_signals(time, modified_amplitude)
+        )
         compare_button.pack(pady=20)
 
-        
+        # Back Button to return to Task 1 Sub Tasks menu
         back_button = tk.Button(root, text="Back", command=task1_sub_tasks)
         back_button.pack(pady=20)
 
@@ -660,6 +675,10 @@ def menue():
      button6.pack(pady=10)
      button7 = tk.Button(rep_window, text="quant signals", command=open_choice_menu)
      button7.pack(pady=10)
+     dft_button = tk.Button(rep_window, text="DFT", command=calculate_dft_and_display)
+     dft_button.pack(pady=20)
+     idft_button = tk.Button(rep_window, text="IDFT", command=calculate_idft_and_display)
+     idft_button.pack(pady=20)
 
 def QuantizationTest1(file_name,Your_EncodedValues,Your_QuantizedValues):
     expectedEncodedValues=[]
@@ -754,29 +773,28 @@ def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_Qua
 def quantize_signal(signal, num_levels):
     min_val, max_val = min(signal), max(signal)
 
-    # Calculate quantization levels as midpoints of each interval
+   
     quantization_levels = np.linspace(min_val, max_val, num_levels + 1)
     quantization_levels = (quantization_levels[:-1] + quantization_levels[1:]) / 2
     num_bits = int(np.ceil(np.log2(num_levels)))
 
-    # Create binary codes for each level
+  
     binary_codes = [format(i, f'0{num_bits}b') for i in range(num_levels)]
 
-    # Initialize lists to store results
     quantized_signal = []
     encoded_signal = []
     interval_indices = []
 
-    # Quantize the signal
+    
     for value in signal:
-        # Find the closest quantization level
+        
         idx = (np.abs(quantization_levels - value)).argmin()
         interval_indices.append(idx)
         quantized_value = quantization_levels[idx]
         quantized_signal.append(quantized_value)
         encoded_signal.append(binary_codes[idx])
 
-    # Calculate error and average power error
+   
     error =  np.array(quantized_signal) - np.array(signal)
     avg_power_error = np.mean(error ** 2)
 
@@ -865,11 +883,198 @@ def process_quantization(levels):
     print(quantized_values)
     print(error)
     # Display plot
-    display_plot(interval_indices, encoded_values, quantized_values, error)
+    display_plot(one_based_interval_index, encoded_values, quantized_values, error)
 
     # Save results to files
-    QuantizationTest1("D:\\uni\\DSP\\DSP_tasks\\task3\\Quan1_Out.txt", encoded_values, quantized_values)
-    QuantizationTest2("D:\\uni\\DSP\\DSP_tasks\\task3\\Quan2_Out.txt",one_based_interval_index,  encoded_values, quantized_values, error)
+    QuantizationTest1("c://Users//96650//Desktop//signals//Task3 Files//Quan1_Out.txt", encoded_values, quantized_values)
+    QuantizationTest2("c://Users//96650//Desktop//signals//Task3 Files//Quan2_Out.txt",one_based_interval_index,  encoded_values, quantized_values, error)
+
+
+
+def calculate_dft_and_display():
+    global X  # Declare global to modify it
+    # Browse and read input signal file
+    time, amplitude = browse_and_read_signal_file()
+    if time is None or amplitude is None:
+        return
+
+    # Calculate the DFT using the exponential form
+    N = len(amplitude)
+    X = [0] * N
+    frequencies = [k * Fs / N for k in range(N)]  # Non-negative frequencies
+
+    for k in range(N):
+        for n in range(N):
+            X[k] += amplitude[n] * np.exp(-1j * 2 * np.pi * k * n / N)
+
+    # Calculate magnitudes and phases
+    magnitudes = np.abs(X)
+    phases = np.angle(X)
+
+    # Compare with expected values
+    expected_amplitudes, expected_phases = browse_and_read_expected_values()
+    if expected_amplitudes is None or expected_phases is None:
+        return
+
+    # Output formatted results
+    formatted_output = []
+    for index, (magnitude, phase) in enumerate(zip(magnitudes, phases)):
+        if index in [3, 5]:
+            formatted_output.append(f"{magnitude:.14f}f {phase:.14f}f")
+        else:
+            if phase.is_integer():
+                formatted_output.append(f"{int(magnitude)} {int(phase)}")
+            elif magnitude.is_integer():
+                formatted_output.append(f"{int(magnitude)} {phase:.14f}f")
+            else:
+                formatted_output.append(f"{magnitude:.13f}f {phase:.14f}f")
+
+    output_file_path = filedialog.asksaveasfilename(defaultextension=".txt",
+                                                    title="Save Formatted Output",
+                                                    filetypes=[("Text Files", "*.txt"),
+                                                               ("All Files", ".*")])
+    if output_file_path:
+        with open(output_file_path, 'w') as f:
+            for line in formatted_output:
+                f.write(line + '\n')
+
+    if SignalCompareAmplitude(magnitudes, expected_amplitudes) and SignalComparePhaseShift(phases, expected_phases):
+        messagebox.showinfo("Comparison Result", "The calculated DFT matches the expected results.")
+    else:
+        messagebox.showerror("Comparison Result", "The calculated DFT does not match the expected results.")
+
+    # Display the DFT result
+    display_dft_result(frequencies, magnitudes, phases)
+
+def calculate_idft_and_display():
+    global X  # Access the global DFT results
+    if not X:
+        messagebox.showerror("Error", "No DFT data available for IDFT calculation.")
+        return
+
+    N = len(X)
+    idft_signal = []
+
+    for n in range(N):
+        # IDFT formula using exponential form
+        X_k = sum(X[k] * np.exp(1j * 2 * np.pi * k * n / N) for k in range(N)) / N
+        idft_signal.append(X_k.real)
+
+    # Display the IDFT result
+    display_idft_result(idft_signal)
+
+def display_idft_result(idft_signal):
+    plt.figure(figsize=(10, 4))
+    plt.plot(idft_signal, marker='o', linestyle='-')
+    plt.title('Inverse Discrete Fourier Transform (IDFT) Result')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Amplitude')
+    plt.grid(True)
+    plt.show()
+
+def browse_and_read_expected_values():
+    file_path = filedialog.askopenfilename(
+        title="Select Expected Values File",
+        filetypes=(("Text Files", ".txt"), ("All Files", ".*"))
+    )
+    if not file_path:
+        messagebox.showinfo("No File Selected", "Please select a valid file.")
+        return None, None
+
+    try:
+        with open(file_path, 'r') as f:
+            expected_amplitudes = []
+            expected_phases = []
+            for _ in range(3):
+                next(f)
+
+            for line in f:
+                parts = line.split()
+                if len(parts) != 2:
+                    messagebox.showerror("Error", f"Line format error: '{line.strip()}' - Expected two values.")
+                    return None, None
+                try:
+                    amp = float(parts[0].rstrip('f'))
+                    phase = float(parts[1].rstrip('f'))
+                    expected_amplitudes.append(amp)
+                    expected_phases.append(phase)
+                except ValueError:
+                    messagebox.showerror("Error", f"Invalid number format in line: '{line.strip()}'")
+                    return None, None
+
+        return np.array(expected_amplitudes), np.array(expected_phases)
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+        return None, None
+
+def browse_and_read_signal_file():
+    file_path = filedialog.askopenfilename(
+        title="Select Signal File",
+        filetypes=(("Text Files", ".txt"), ("All Files", ".*"))
+    )
+    if not file_path:
+        messagebox.showinfo("No File Selected", "Please select a valid file.")
+        return None, None
+
+    try:
+        with open(file_path, 'r') as f:
+            for _ in range(3):  
+                next(f)
+            time, amplitude = [], []
+            for line in f:
+                t, a = map(float, line.split())
+                time.append(t)
+                amplitude.append(a)
+        return np.array(time), np.array(amplitude)
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+        return None, None
+
+def display_dft_result(frequencies, magnitudes, phases):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+    ax1.stem(frequencies, magnitudes, linefmt='b-', markerfmt='bo', basefmt=" ")
+    ax1.set_title('Frequency vs Amplitude')
+    ax1.set_xlabel('Frequency (Hz)')
+    ax1.set_ylabel('Amplitude')
+    ax1.grid(True)
+
+    ax2.stem(frequencies, phases, linefmt='orange', markerfmt='o', basefmt=" ")
+    ax2.set_title('Frequency vs Phase')
+    ax2.set_xlabel('Frequency (Hz)')
+    ax2.set_ylabel('Phase (radians)')
+    ax2.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+def SignalCompareAmplitude(SignalInput=[], SignalOutput=[]):
+    if len(SignalInput) != len(SignalOutput):
+        return False
+    for i in range(len(SignalInput)):
+        if abs(SignalInput[i] - SignalOutput[i]) > 1e-10:  
+            print(f"Mismatch at index {i}: {SignalInput[i]} vs {SignalOutput[i]}")
+            return False
+    return True
+
+def RoundPhaseShift(P):
+    while P < 0:
+        P += 2 * np.pi
+    return float(P % (2 * np.pi))
+
+def SignalComparePhaseShift(SignalInput=[], SignalOutput=[]):
+    if len(SignalInput) != len(SignalOutput):
+        return False
+    for i in range(len(SignalInput)):
+        A = RoundPhaseShift(SignalInput[i])
+        B = RoundPhaseShift(SignalOutput[i])
+        if abs(A - B) > 0.0001:
+            print(f"Phase mismatch at index {i}: {A} vs {B}")
+            return False
+    return True
+
+
+
 root = tk.Tk()
 root.title("Tasks")
 root.geometry("900x600")  
