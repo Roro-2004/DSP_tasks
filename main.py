@@ -676,10 +676,93 @@ def menue():
      button7 = tk.Button(rep_window, text="quant signals", command=open_choice_menu)
      button7.pack(pady=10)
      dft_button = tk.Button(rep_window, text="DFT", command=calculate_dft_and_display)
-     dft_button.pack(pady=20)
+     dft_button.pack(pady=10)
      idft_button = tk.Button(rep_window, text="IDFT", command=calculate_idft_and_display)
-     idft_button.pack(pady=20)
+     idft_button.pack(pady=10)
+     DCT_button = tk.Button(rep_window, text="DCT", command=calculate_dct_and_display)
+     DCT_button.pack(pady=10)
+     sharpening_button = tk.Button(rep_window, text="sharpning signal", command=DerivativeSignal)
+     sharpening_button.pack(pady=10)
+     folding_button = tk.Button(rep_window, text="folding signal", command=folding_signal)
+     folding_button.pack(pady=10)
+def folding_signal():
+    """Handles the button click event for folding a signal."""
+    file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+    if not file_path:
+        messagebox.showerror("Input Error", "Please select a signal file.")
+        return
 
+    # Read the signal from the file
+    signal, indices = read_signal_with_indices_from_txt(file_path)  # Updated to return indices
+    if signal is None or indices is None:
+        messagebox.showerror("Error", "Could not read the signal from the file.")
+        return
+
+    # Perform the folding operation
+    result_signal = fold_signal(signal)
+
+    
+    # Optional: Save the indices and folded signal to a file
+    save_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
+    if save_path:
+        with open(save_path, 'w') as file:
+            file.write("Index, Folded Value\n")
+            for idx, value in zip(indices, result_signal):
+                file.write(f"{idx}, {int(value)}\n")
+        messagebox.showinfo("Success", f"Folded signal saved to {save_path}")
+        for value in result_signal:
+            print(value)
+    print(SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task 5\\FOLD\\Output_fold.txt",signal,result_signal))
+def calculate_dct_and_display():
+    # Let user select a signal file
+    index, signal =browse_and_read_signal_file()
+
+    # Ask user for the number of coefficients (m) to save
+    m = simpledialog.askinteger("Input", "Enter the number of DCT coefficients to save:")
+    if m is None or m <= 0:
+        messagebox.showerror("Input Error", "Invalid number of coefficients.")
+        return
+
+    # Compute the DCT
+    dct_coefficients = DCT(signal, m)
+
+    # Save the first m coefficients to a new file
+    output_file = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
+    if not output_file:
+        messagebox.showerror("File Error", "No output file selected.")
+        return
+
+    with open(output_file, "w") as f:
+        f.write("0\n")  # Add header or meta information if needed
+        f.write("1\n")
+        f.write(f"{len(dct_coefficients)}\n")  # Write the number of coefficients (m)
+        for index, coeff in enumerate(dct_coefficients):
+            f.write(f"{index} {coeff:.6f}\n")
+
+    # Display the result
+    print("DCT Coefficients:")
+    for index, coeff in enumerate(dct_coefficients):
+        print(f"{index}: {coeff:.6f}")
+
+    messagebox.showinfo("Success", f"DCT coefficients saved to {output_file}")
+
+    # Compare the output file with the original signal
+    print(SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task 5\\DCT\\DCT_output.txt", range(len(dct_coefficients)), dct_coefficients))  # Compare output file with the DCT coefficients
+def DCT(signal, m):
+    N = len(signal)
+    dct_coefficients = np.zeros(N)  # Initialize DCT coefficient array
+
+    for k in range(N):  # k ranges from 1 to N
+        summation = 0
+        for n in range(N):  # n ranges from 1 to N
+            summation += signal[n] * np.cos((np.pi / (4 * N)) * (2 * n - 1) * (2 * k - 1))
+        dct_coefficients[k] = np.sqrt(2 / N) * summation
+
+    # Save only the first m coefficients if specified
+    if m is not None and m < N:
+        dct_coefficients = dct_coefficients[:m]
+
+    return dct_coefficients
 def QuantizationTest1(file_name,Your_EncodedValues,Your_QuantizedValues):
     expectedEncodedValues=[]
     expectedQuantizedValues=[]
@@ -714,7 +797,14 @@ def QuantizationTest1(file_name,Your_EncodedValues,Your_QuantizedValues):
             print("QuantizationTest1 Test case failed, your QuantizedValues have different values from the expected one") 
             return
     print("QuantizationTest1 Test case passed successfully")
+def fold_signal(signal):
+    n = len(signal)
+    folded_signal = [0]*n
 
+    for i in range(n):
+        folded_signal[i] = signal[n - 1 - i]
+
+    return folded_signal
 def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_QuantizedValues,Your_SampledError):
     expectedIntervalIndices=[]
     expectedEncodedValues=[]
@@ -769,7 +859,26 @@ def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_Qua
             print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one") 
             return
     print("QuantizationTest2 Test case passed successfully")
+def read_signal_with_indices_from_txt(file_path):
+    """Reads the signal and its indices from a text file."""
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
 
+        indices = []
+        signal = []
+
+        for line in lines[3:]:  # Skip the first 3 rows as per your framework
+            parts = line.strip().split()
+            if len(parts) < 2:
+                continue
+            indices.append(int(parts[0]))  # Assuming the first column is the index
+            signal.append(float(parts[1]))  # Assuming the second column is the signal value
+
+        return signal, indices
+    except Exception as e:
+        print(f"Error reading signal: {e}")
+        return None, None
 def quantize_signal(signal, num_levels):
     min_val, max_val = min(signal), max(signal)
 
@@ -888,8 +997,63 @@ def process_quantization(levels):
     # Save results to files
     QuantizationTest1("c://Users//96650//Desktop//signals//Task3 Files//Quan1_Out.txt", encoded_values, quantized_values)
     QuantizationTest2("c://Users//96650//Desktop//signals//Task3 Files//Quan2_Out.txt",one_based_interval_index,  encoded_values, quantized_values, error)
+def DerivativeSignal():
+        InputSignal = [
+            "1f", "2f", "3f", "4f", "5f", "6f", "7f", "8f", "9f", "10f", "11f", "12f", "13f", "14f", "15f", "16f", 
+            "17f", "18f", "19f", "20f", "21f", "22f", "23f", "24f", "25f", "26f", "27f", "28f", "29f", "30f", "31f", 
+            "32f", "33f", "34f", "35f", "36f", "37f", "38f", "39f", "40f", "41f", "42f", "43f", "44f", "45f", "46f", 
+            "47f", "48f", "49f", "50f", "51f", "52f", "53f", "54f", "55f", "56f", "57f", "58f", "59f", "60f", "61f", 
+            "62f", "63f", "64f", "65f", "66f", "67f", "68f", "69f", "70f", "71f", "72f", "73f", "74f", "75f", "76f", 
+            "77f", "78f", "79f", "80f", "81f", "82f", "83f", "84f", "85f", "86f", "87f", "88f", "89f", "90f", "91f", 
+            "92f", "93f", "94f", "95f", "96f", "97f", "98f", "99f", "100f"
+]
 
+# Remove the 'f' and convert to float
+        CleanedSignal = [float(value[:-1]) for value in InputSignal]
+        expectedOutput_first = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        expectedOutput_second = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
+        """
+        Write your Code here:
+        Start
+        """
+            # Calculate first derivative
+        FirstDrev = [CleanedSignal[i] - CleanedSignal[i - 1] for i in range(1, len(CleanedSignal))]
+
+            # Calculate second derivative
+        SecondDrev = [CleanedSignal[i + 1] - 2 * CleanedSignal[i] + CleanedSignal[i - 1] for i in range(1, len(CleanedSignal) - 1)]
+
+        
+        """
+        End
+        """
+        
+        """
+        Testing your Code
+        """
+        if( (len(FirstDrev)!=len(expectedOutput_first)) or (len(SecondDrev)!=len(expectedOutput_second))):
+            print("mismatch in length") 
+            return
+        first=second=True
+        for i in range(len(expectedOutput_first)):
+            if abs(FirstDrev[i] - expectedOutput_first[i]) < 0.01:
+                continue
+            else:
+                first=False
+                print("1st derivative wrong")
+                return
+        for i in range(len(expectedOutput_second)):
+            if abs(SecondDrev[i] - expectedOutput_second[i]) < 0.01:
+                continue
+            else:
+                second=False
+                print("2nd derivative wrong") 
+                return
+        if(first and second):
+            print("Derivative Test case passed successfully")
+        else:
+            print("Derivative Test case failed")
+        return
 
 def calculate_dft_and_display():
     global X  # Declare global to modify it
