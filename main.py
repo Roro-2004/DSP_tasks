@@ -90,9 +90,20 @@ def task1_sub_tasks():
     button4 = tk.Button(root, text="normalize signals", command=normalize)
     button4.pack(pady=10)
 
+    
     button7 = tk.Button(root, text="quant signals", command=open_choice_menu)
     button7.pack(pady=10)
-
+    button8 = tk.Button(root, text="correlation", command=test_normalized_cross_correlation)
+    button8.pack(pady=10)
+    button8 = tk.Button(root, text="remove dc in time domain", command=compute_and_compare_with_dc_removal)
+    button8.pack(pady=10)
+    button8 = tk.Button(root, text="remove dc in freq domain", command=compute_and_compare_with_dc_removall)
+    button8.pack(pady=10)
+    button8 = tk.Button(root, text="smoothing", command=compute_moving_average)
+    button8.pack(pady=10)
+    button8 = tk.Button(root, text="convolution", command=convolution)
+    button8.pack(pady=10)
+    
     
 def sine_cosine_generation_menue():
     # Create the main window
@@ -685,6 +696,10 @@ def menue():
      sharpening_button.pack(pady=10)
      folding_button = tk.Button(rep_window, text="folding signal", command=folding_signal)
      folding_button.pack(pady=10)
+     button8 = tk.Button(rep_window, text="Shift fold Signal", command=process_signal)
+     button8.pack(pady=10)
+
+
 def folding_signal():
     """Handles the button click event for folding a signal."""
     file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
@@ -712,7 +727,8 @@ def folding_signal():
         messagebox.showinfo("Success", f"Folded signal saved to {save_path}")
         for value in result_signal:
             print(value)
-    print(SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task 5\\FOLD\\Output_fold.txt",signal,result_signal))
+    print(SignalSamplesAreEqual("c://Users//96650//Desktop//signals//Output_fold.txt",signal,result_signal))
+    
 def calculate_dct_and_display():
     # Let user select a signal file
     index, signal =browse_and_read_signal_file()
@@ -747,7 +763,7 @@ def calculate_dct_and_display():
     messagebox.showinfo("Success", f"DCT coefficients saved to {output_file}")
 
     # Compare the output file with the original signal
-    print(SignalSamplesAreEqual("D:\\uni\\DSP\\DSP_tasks\\task 5\\DCT\\DCT_output.txt", range(len(dct_coefficients)), dct_coefficients))  # Compare output file with the DCT coefficients
+    print(SignalSamplesAreEqual("c://Users//96650//Desktop//signals//DCT_output.txt", range(len(dct_coefficients)), dct_coefficients))  # Compare output file with the DCT coefficients
 def DCT(signal, m):
     N = len(signal)
     dct_coefficients = np.zeros(N)  # Initialize DCT coefficient array
@@ -805,6 +821,98 @@ def fold_signal(signal):
         folded_signal[i] = signal[n - 1 - i]
 
     return folded_signal
+
+def delay_or_advance_signal(signal, indices, k):
+    """Delays or advances the signal by k steps."""
+    n = len(signal)
+    
+    # If k is positive, delay the signal (shift right)
+    if k > 0:
+        shifted_signal = [0] * k + signal[:-k]  # Delay by k steps
+        shifted_indices = indices[k:]  # Adjust indices for the delayed signal
+    # If k is negative, advance the signal (shift left)
+    elif k < 0:
+        shifted_signal = signal[k:] + [0] * (-k)  # Advance by -k steps
+        shifted_indices = indices[:k]  # Adjust indices for the advanced signal
+    else:
+        shifted_signal = signal  # No shift if k == 0
+        shifted_indices = indices
+
+    return shifted_indices, shifted_signal
+
+def Shift_Fold_Signal(file_name,Your_indices,Your_samples):      
+    expected_indices=[]
+    expected_samples=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+
+    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
+        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if(Your_indices[i]!=expected_indices[i]):
+            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one") 
+            return
+    print("Shift_Fold_Signal Test case passed successfully")
+
+
+
+def process_signal():
+    """Handles the folding and shifting process."""
+    # Ask for the value of k from the user
+    k = simpledialog.askinteger("Input", "Enter the value of k (positive for delay, negative for advance):"  )
+    if k is None:
+        messagebox.showerror("Input Error", "No value entered for k.")
+        return
+
+    # Ask user to select a signal file
+    input_file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+    if not input_file:
+        messagebox.showerror("Error", "No input file selected.")
+        return
+
+    # Read the signal and indices from the file
+    signal, indices = read_signal_with_indices_from_txt(input_file)
+    if signal is None or indices is None:
+        messagebox.showerror("Error", "Could not read the signal from the file.")
+        return
+
+    # Process signal: fold and shift
+    folded_signal = fold_signal(signal)
+    folded_indices = fold_signal(indices)
+    shifted_indices, shifted_signal = delay_or_advance_signal(folded_signal, folded_indices, k)
+
+    # Compare with expected output
+    expected_file = "c://Users//96650//Desktop//signals//Output_ShifFoldedby500.txt" if k > 0 else "c://Users//96650//Desktop//signals//Output_ShiftFoldedby-500.txt"
+    Shift_Fold_Signal(expected_file, shifted_indices, shifted_signal)
+    
+  
+
+
 def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_QuantizedValues,Your_SampledError):
     expectedIntervalIndices=[]
     expectedEncodedValues=[]
@@ -1237,8 +1345,366 @@ def SignalComparePhaseShift(SignalInput=[], SignalOutput=[]):
             return False
     return True
 
+def Compare_Signals(file_name,Your_indices,Your_samples):      
+    expected_indices=[]
+    expected_samples=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
+        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if(Your_indices[i]!=expected_indices[i]):
+            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Correlation Test case failed, your signal have different values from the expected one") 
+            return
+    print("Correlation Test case passed successfully")
+
+def normalized_cross_correlation(X1, X2):
+    X1 = np.array(X1)
+    X2 = np.array(X2)
+
+    N = len(X1)  # Signal length
+
+    # Pre-compute squared sums for normalization
+    X1_squared_sum = np.sum(X1 ** 2)
+    X2_squared_sum = np.sum(X2 ** 2)
+    normalization = np.sqrt(X1_squared_sum * X2_squared_sum)
+
+    # Compute the cross-correlation numerator
+    r12 = []
+    for j in range(N):
+        numerator = sum(X1[i] * X2[(i + j) % N] for i in range(N))  # Periodic signals
+        r12.append(numerator / normalization)
+
+    return np.array(r12)
+
+def test_normalized_cross_correlation():
+    """
+    Test normalized cross-correlation using browsed signal files and compare results.
+    """
+    # Assuming browse_and_read_signal_file() loads the signals
+    signal1_indices, signal1_samples = browse_and_read_signal_file()
+    if signal1_indices is None or signal1_samples is None:
+        return
+
+    signal2_indices, signal2_samples = browse_and_read_signal_file()
+    if signal2_indices is None or signal2_samples is None:
+        return
+
+    # Compute normalized cross-correlation
+    normalized_cc = normalized_cross_correlation(signal1_samples, signal2_samples)
+   
+    # Compare with expected output (assuming Compare_Signals is correctly implemented)
+    expected_file_path = filedialog.askopenfilename(
+        title="Select Expected Output File",
+        filetypes=(("Text Files", "*.txt"), ("All Files", "*.*"))
+    )
+    if not expected_file_path:
+        messagebox.showerror("Error", "No file selected!")
+        return
+
+    # Assuming Compare_Signals compares the output with expected values
+    Compare_Signals(expected_file_path, signal1_indices, normalized_cc)
+
+def compare_with_expected_output(smoothed_signal, expected_file_path):
+    """
+    Compares the computed smoothed signal with the expected output stored in a file.
+    """
+    try:
+        expected_output = read_signal_file(expected_file_path)
+    except ValueError as e:
+        messagebox.showerror("Error", f"Could not read the expected output file: {e}")
+        return
+
+    # Round the smoothed signal to 3 decimal places
+    rounded_smoothed_signal = np.round(smoothed_signal, 3)
+
+    # Compare the signals
+    if np.allclose(rounded_smoothed_signal, expected_output, atol=1e-5):
+        messagebox.showinfo("Comparison Result", "Test Passed: Computed signal matches the expected signal.")
+    else:
+        messagebox.showerror("Comparison Result", f"Test Failed: Computed signal does not match the expected signal.\n\n"
+                                                  f"Computed: {rounded_smoothed_signal}\n"
+                                                  f"Expected: {expected_output}")
+def remove_dc_time_domain(signal):
+    """
+    Removes the DC component (mean value) from the signal in the time domain.
+    """
+    mean_value = np.mean(signal)
+    return signal - mean_value
+def compute_and_compare_with_dc_removal():
+    """
+    Computes the signal with the DC component removed (time domain) and compares it with the expected output.
+    Optionally smooth the signal.
+    """
+    # Step 1: Load the input signal
+    from tkinter import filedialog
+
+    input_file_path = filedialog.askopenfilename(title="Select Input Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not input_file_path:
+        messagebox.showerror("Error", "No input file selected!")
+        return
+
+    try:
+        signal = read_signal_file(input_file_path)
+    except ValueError as e:
+        messagebox.showerror("Error", f"Could not read the input file: {e}")
+        return
+
+    # Step 2: Remove DC and smooth signal (time domain only)
+    signal_no_dc =remove_dc_time_domain(signal)
+
+    # Step 3: Load the expected output file
+    expected_file_path = filedialog.askopenfilename(title="Select Expected Output File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not expected_file_path:
+        messagebox.showerror("Error", "No expected output file selected!")
+        return
+
+    # Step 4: Compare the computed signal with the expected signal (only time domain DC removal)
+    compare_with_expected_output(signal_no_dc, expected_file_path)
+def dft(signal):
+    N = len(signal)
+    X = np.zeros(N, dtype=complex)
+    
+    for k in range(N):
+        # Sum of exponentials for each frequency component
+        X[k] = np.sum(signal * np.exp(-2j * np.pi * k * np.arange(N) / N))
+    return X
+
+def idft(X):
+    N = len(X)
+    x_reconstructed = np.zeros(N, dtype=complex)
+    
+    for n in range(N):
+        # Sum of exponentials for each time-domain component
+        x_reconstructed[n] = np.sum(X * np.exp(2j * np.pi * n * np.arange(N) / N)) / N
+    return x_reconstructed
+
+def remove_dc_frequency_domain_highpass(signal):
+    # Compute the DFT of the signal
+    signal_dft = dft(signal)
+    
+    # Set the DC component (index 0) to zero
+    signal_dft[0] = 0
+    
+    # Compute the inverse DFT to return to the time domain
+    return np.real(idft(signal_dft))
+def compute_and_compare_with_dc_removall():
+    """
+    Computes the signal with the DC component removed (time domain) and compares it with the expected output.
+    Optionally smooth the signal.
+    """
+    # Step 1: Load the input signal
+    from tkinter import filedialog
+
+    input_file_path = filedialog.askopenfilename(title="Select Input Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not input_file_path:
+        messagebox.showerror("Error", "No input file selected!")
+        return
+
+    try:
+        signal = read_signal_file(input_file_path)
+    except ValueError as e:
+        messagebox.showerror("Error", f"Could not read the input file: {e}")
+        return
+
+    # Step 2: Remove DC and smooth signal (time domain only)
+    signal_no_dc =remove_dc_frequency_domain_highpass(signal)
+
+    # Step 3: Load the expected output file
+    expected_file_path = filedialog.askopenfilename(title="Select Expected Output File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not expected_file_path:
+        messagebox.showerror("Error", "No expected output file selected!")
+        return
+
+    # Step 4: Compare the computed signal with the expected signal (only time domain DC removal)
+    compare_with_expected_output(signal_no_dc, expected_file_path)
+def compute_moving_average():
+    """
+    Computes the moving average for a signal read from a file using read_signal_file.
+    """
+    from tkinter import filedialog
+
+    # Prompt the user to select a file
+    file_path = filedialog.askopenfilename(title="Select Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not file_path:
+        messagebox.showerror("Error", "No file selected!")
+        return
+
+    # Read the signal from the file using the provided function
+    try:
+        signal = read_signal_file(file_path)
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+        return
+
+    # Prompt the user to enter the window size
+    window_size_input = simpledialog.askstring("Window Size", "Enter the moving average window size (positive integer):")
+    if not window_size_input:
+        messagebox.showerror("Error", "Window size is required!")
+        return
+
+    # Validate and convert the window size to an integer
+    try:
+        window_size = int(window_size_input)
+        if window_size <= 0:
+            raise ValueError
+    except ValueError:
+        messagebox.showerror("Error", "Invalid window size. Please enter a positive integer.")
+        return
+
+    # Ensure the window size is not greater than the signal length
+    if window_size > len(signal):
+        messagebox.showerror("Error", "Window size cannot be larger than the signal length.")
+        return
+
+    # Compute the moving average
+    smoothed_signal = [
+        np.mean(signal[i:i + window_size]) 
+        for i in range(len(signal) - window_size + 1)
+    ]
+    expected_file_path = filedialog.askopenfilename(title="Select Expected Output File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not expected_file_path:
+        messagebox.showerror("Error", "No expected output file selected!")
+        return
+
+    # Step 4: Compare the computed signal with the expected signal (only time domain DC removal)
+    compare_with_expected_output(smoothed_signal, expected_file_path)
+
+def read_signall_file(filename):
+    """Reads the signal file and returns the indices and samples, skipping the first 3 lines."""
+    try:
+        with open(filename, 'r') as f:
+            for _ in range(3):  
+                next(f)
+            time, amplitude = [], []
+            for line in f:
+                t, a = map(float, line.split())
+                time.append(t)
+                amplitude.append(a)
+        return np.array(time), np.array(amplitude)
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+        return None, None
+
+def ConvTest(Your_indices,Your_samples): 
+    """
+    Test inputs
+    InputIndicesSignal1 =[-2, -1, 0, 1]
+    InputSamplesSignal1 = [1, 2, 1, 1 ]
+    
+    InputIndicesSignal2=[0, 1, 2, 3, 4, 5 ]
+    InputSamplesSignal2 = [ 1, -1, 0, 0, 1, 1 ]
+    """
+    
+    expected_indices=[-2, -1, 0, 1, 2, 3, 4, 5, 6]
+    expected_samples = [1, 1, -1, 0, 0, 3, 3, 2, 1 ]
+
+    
+    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
+        print("Conv Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if(Your_indices[i]!=expected_indices[i]):
+            print("Conv Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Conv Test case failed, your signal have different values from the expected one") 
+            return
+    print("Conv Test case passed successfully")
+
+def compute_convolution(signal_data, signal_indices, signal_data_2, signal_indices_2):
+   # global signal_data, signal_indices, signal_data_2, signal_indices_2
+
+    if signal_data is None or signal_data_2 is None:
+        messagebox.showerror("Error", "Both signals must be loaded.")
+        return
 
 
+    # Manual computation of convolution
+    len_signal1 = len(signal_data)
+    len_signal2 = len(signal_data_2)
+    convolved_signal = []
+    for n in range(len_signal1 + len_signal2 - 1):
+            conv_sum = 0
+            for k in range(len_signal1):
+                if 0 <= n - k < len_signal2:
+                    conv_sum += signal_data[k] * signal_data_2[n - k]
+            convolved_signal.append(conv_sum)
+
+        # Calculate correct indices for the convolved signal
+    start_index = int(signal_indices[0] + signal_indices_2[0])
+    convolved_indices = list(range(start_index, start_index + len(convolved_signal)))
+    return convolved_indices, convolved_signal
+        
+def compute_convolution_from_files(file1, file2):
+    """Compute the convolution of two signals read from files."""
+    try:
+        # Load signals and indices using read_signal_file
+        indices1, signal1 = read_signall_file(file1)
+        indices2, signal2 = read_signall_file(file2)
+
+        # Compute the convolution and return results
+        return compute_convolution(signal1, indices1, signal2, indices2)
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Error reading input files: {e}")
+        return None, None
+
+def convolution():
+    """Convolution GUI function to allow the user to select files and compute convolution."""
+    # Create file dialog for the first signal file
+    file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not file1:
+        messagebox.showerror("Error", "No first file selected!")
+        return
+
+    # Create file dialog for the second signal file
+    file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
+    if not file2:
+        messagebox.showerror("Error", "No second file selected!")
+        return
+
+    # Call the convolution function to get the result
+    indices1, signal1 = read_signall_file(file1)
+    indices2, signal2 = read_signall_file(file2)
+    print(indices1)
+    print(signal1)
+    print(indices2)
+    print(signal2)
+    result_indices, result_samples = compute_convolution(signal1,indices1,signal2,indices2)
+    print(result_indices)
+    print(result_samples)
+    ConvTest(result_indices, result_samples)
+
+        
 root = tk.Tk()
 root.title("Tasks")
 root.geometry("900x600")  
@@ -1250,4 +1716,4 @@ task_2_button = tk.Button(root, text="validate", command=menue)
 task_2_button.pack(pady=20)
 root.config(background='lightblue')
 root.mainloop()
-####sssssss
+####sssssssssss
