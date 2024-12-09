@@ -1,1 +1,1 @@
-signal
+def dft(signal):

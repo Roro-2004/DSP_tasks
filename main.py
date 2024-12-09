@@ -5,6 +5,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox
+import numpy as np
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import math
+from tkinter import Tk, Toplevel, Entry, Button, filedialog, END
 
 
 Fs = 4000  # 4 kHz
@@ -103,7 +108,10 @@ def task1_sub_tasks():
     button8.pack(pady=10)
     button8 = tk.Button(root, text="convolution", command=convolution)
     button8.pack(pady=10)
-    
+    button9 = tk.Button(root, text="filters", command=filters)
+    button9.pack(pady=10)
+    button10 = tk.Button(root, text="resampling", command=open_resample_signal_window)
+    button10.pack(pady=10)
     
 def sine_cosine_generation_menue():
     # Create the main window
@@ -1345,44 +1353,6 @@ def SignalComparePhaseShift(SignalInput=[], SignalOutput=[]):
             return False
     return True
 
-def Compare_Signals(file_name,Your_indices,Your_samples):      
-    expected_indices=[]
-    expected_samples=[]
-    with open(file_name, 'r') as f:
-        line = f.readline()
-        line = f.readline()
-        line = f.readline()
-        line = f.readline()
-        while line:
-            # process line
-            L=line.strip()
-            if len(L.split(' '))==2:
-                L=line.split(' ')
-                V1=int(L[0])
-                V2=float(L[1])
-                expected_indices.append(V1)
-                expected_samples.append(V2)
-                line = f.readline()
-            else:
-                break
-    print("Current Output Test file is: ")
-    print(file_name)
-    print("\n")
-    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
-        return
-    for i in range(len(Your_indices)):
-        if(Your_indices[i]!=expected_indices[i]):
-            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one") 
-            return
-    for i in range(len(expected_samples)):
-        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
-            continue
-        else:
-            print("Correlation Test case failed, your signal have different values from the expected one") 
-            return
-    print("Correlation Test case passed successfully")
-
 def normalized_cross_correlation(X1, X2):
     X1 = np.array(X1)
     X2 = np.array(X2)
@@ -1426,7 +1396,7 @@ def test_normalized_cross_correlation():
     if not expected_file_path:
         messagebox.showerror("Error", "No file selected!")
         return
-
+    print(normalized_cc)
     # Assuming Compare_Signals compares the output with expected values
     Compare_Signals(expected_file_path, signal1_indices, normalized_cc)
 
@@ -1534,7 +1504,7 @@ def compute_and_compare_with_dc_removall():
 
     # Step 2: Remove DC and smooth signal (time domain only)
     signal_no_dc =remove_dc_frequency_domain_highpass(signal)
-
+    print(signal_no_dc)
     # Step 3: Load the expected output file
     expected_file_path = filedialog.askopenfilename(title="Select Expected Output File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
     if not expected_file_path:
@@ -1591,6 +1561,7 @@ def compute_moving_average():
     if not expected_file_path:
         messagebox.showerror("Error", "No expected output file selected!")
         return
+    print(smoothed_signal)
 
     # Step 4: Compare the computed signal with the expected signal (only time domain DC removal)
     compare_with_expected_output(smoothed_signal, expected_file_path)
@@ -1679,20 +1650,18 @@ def compute_convolution_from_files(file1, file2):
         return None, None
 
 def convolution():
-    """Convolution GUI function to allow the user to select files and compute convolution."""
-    # Create file dialog for the first signal file
     file1 = filedialog.askopenfilename(title="Select First Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
     if not file1:
         messagebox.showerror("Error", "No first file selected!")
         return
 
-    # Create file dialog for the second signal file
+    
     file2 = filedialog.askopenfilename(title="Select Second Signal File", filetypes=(("Text Files", "*.txt"), ("All Files", "*.*")))
     if not file2:
         messagebox.showerror("Error", "No second file selected!")
         return
 
-    # Call the convolution function to get the result
+    
     indices1, signal1 = read_signall_file(file1)
     indices2, signal2 = read_signall_file(file2)
     print(indices1)
@@ -1704,7 +1673,544 @@ def convolution():
     print(result_samples)
     ConvTest(result_indices, result_samples)
 
+# Global variables
+signals = []
+filtered_signal = None
+convolution_result = None
+
+def load_files():
+    global signals
+    file_paths = filedialog.askopenfilenames(
+        title="Select Signal Files",
+        filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+    )
+    if not file_paths:
+        return None
+
+    signals = []
+
+    try:
+        for file_path in file_paths:
+            indices = []
+            samples = []
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+                for line in lines:
+                    values = line.strip().split()
+                    if len(values) == 2:
+                        indices.append(int(values[0]))
+                        samples.append(float(values[1]))
+                signals.append({"indices": indices, "samples": samples})
+
+        print("Signal loaded successfully.")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Error loading files: {e}")
+
+def perform_convolution(filter_type_var):
+    print("in conv")
+    filter_type = filter_type_var.get()
+    print(filter_type)
+
+    global signals, filtered_signal, convolution_result
+    if not signals:
+        messagebox.showerror("Error", "No signals loaded.")
+        return
+
+    if not filtered_signal:
+        messagebox.showerror("Error", "No filter has been applied. Please design and apply a filter first.")
+        return
+
+    try:
+        # Input signal
+        input_signal = signals[0]
+        input_indices = input_signal['indices']
+        input_samples = input_signal['samples']
+
+        # Filtered signal
+        filtered_indices = filtered_signal['indices']
+        filtered_samples = filtered_signal['samples']
+
+        # Convolution computation
+        conv_result = np.convolve(input_samples, filtered_samples)
+        start_index = input_indices[0] + filtered_indices[0]
+        end_index = start_index + len(conv_result) - 1
+
+        # Save convolution result
+        convolution_result = {
+            "indices": list(range(start_index, end_index + 1)),
+            "samples": conv_result
+        }
+        # Get the selected filter type
+        # Save convolution result to a file
+        output_directory = "D:\\uni\\DSP\\DSP_tasks\\task 7\\"
+        output_file = f"{output_directory}{filter_type_var.get()}_convolution_result.txt"
+        with open(output_file, "w") as f:
+            f.write("Index Sample\n")
+            for idx, sample in zip(convolution_result["indices"], conv_result):
+                f.write(f"{idx} {sample:.6f}\n")
+
+            print(f"Convolution result saved to {output_file}.")
+            plot_signal("Convolution Result", convolution_result['indices'], convolution_result['samples'])
+
+
+        if filter_type == 'Low pass':
+            print("HERE")
+            Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 2\\ecg_low_pass_filtered.txt", convolution_result['indices'], convolution_result['samples'])
+        elif filter_type == 'High pass':
+            Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 4\\ecg_high_pass_filtered.txt", convolution_result['indices'], convolution_result['samples'])
+        elif filter_type == 'Band pass':
+            Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 6\\ecg_band_pass_filtered.txt", convolution_result['indices'], convolution_result['samples'])
+        elif filter_type == 'Band stop':
+            Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 8\\ecg_band_stop_filtered.txt", convolution_result['indices'], convolution_result['samples'])
+
+        # messagebox.showinfo("Success", "Convolution completed successfully.")
+        # print(f"Convolution Result Indices: {convolution_result['indices']}")
+        # print(f"Convolution Result Samples: {convolution_result['samples']}")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Error performing convolution: {e}")
+        print(f"Error performing convolution: {e}")
+
+def calculate_filter(filter_type, fs, fc, fc2, stop_band_attenuation, transition_band):
+    global filtered_signal
+    try:
+        indices, coefficients = design_fir_filter(filter_type, fs, stop_band_attenuation, fc, transition_band, fc2)
+
+        if len(indices) == 0 or len(coefficients) == 0:
+            messagebox.showerror("Error", "Filter coefficients are empty. Please check your input values.")
+            return
+
+        filtered_signal = {'indices': np.array(indices), 'samples': np.array(coefficients)}
+
+        # print(f"Filtered signal indices: {filtered_signal['indices']}")
+        # print(f"Filtered signal samples: {filtered_signal['samples']}")
+
+        # Save filter coefficients for comparison
+        if filter_type == 'Low pass':
+            Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 1\\LPFCoefficients.txt", filtered_signal['indices'], filtered_signal['samples'])
+        elif filter_type == 'High pass':
+             Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 3\\HPFCoefficients.txt", filtered_signal['indices'], filtered_signal['samples'])
+        elif filter_type == 'Band pass':
+             Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 5\\BPFCoefficients.txt", filtered_signal['indices'], filtered_signal['samples'])
+        elif filter_type == 'Band stop':
+             Compare_Signals("D:\\uni\\DSP\\DSP_tasks\\task 7\\FIR test cases-20241208T221949Z-001\\FIR test cases\\Testcase 7\\BSFCoefficients.txt", filtered_signal['indices'], filtered_signal['samples'])
+
+        output_directory = "D:\\uni\\DSP\\DSP_tasks\\task 7\\"
+        output_file = f"{output_directory}{filter_type}_coefficients.txt"
+        with open(output_file, "w") as f:
+            f.write("Index Coefficient\n")
+            for idx, coef in zip(indices, coefficients):
+                f.write(f"{idx} {coef:.6f}\n")  
+        print(f"Filter coefficients saved to {output_file}.")
+        plot_signal("Filter Coefficients", indices, coefficients)
         
+
+    except ValueError as e:
+        messagebox.showerror("Error", f"Error designing filter: {e}")
+        print(f"Error designing filter: {e}")
+
+def design_fir_filter(filter_type, fs, stop_band_attenuation, fc, transition_band, fc2=None):
+    def window_function(stop_band_attenuation, n, N):
+        if stop_band_attenuation <= 21:
+            return 1
+        elif stop_band_attenuation <= 44:
+            return 0.5 + 0.5 * np.cos(2 * np.pi * n / N)
+        elif stop_band_attenuation <= 53:
+            return 0.54 + 0.46 * np.cos(2 * np.pi * n / N)
+        elif stop_band_attenuation <= 74:
+            return 0.42 + 0.5 * np.cos(2 * np.pi * n / (N - 1)) + 0.08 * np.cos(4 * np.pi * n / (N - 1))
+        else:
+            return 1
+
+    def round_up_to_odd(number):
+        rounded_number = math.ceil(number)
+        if rounded_number % 2 == 0:
+            rounded_number += 1
+        return rounded_number
+
+    delta_f = transition_band / fs
+    if stop_band_attenuation <= 21:
+        N = round_up_to_odd(0.9 / delta_f)
+    elif stop_band_attenuation <= 44:
+        N = round_up_to_odd(3.1 / delta_f)
+    elif stop_band_attenuation <= 53:
+        N = round_up_to_odd(3.3 / delta_f)
+    elif stop_band_attenuation <= 74:
+        N = round_up_to_odd(5.5 / delta_f)
+
+    h = []
+    indices = range(-math.floor(N / 2), math.floor(N / 2) + 1)
+
+    if filter_type == 'Low pass':
+        new_fc = fc + 0.5 * transition_band
+        new_fc /= fs
+        for n in indices:
+            w_n = window_function(stop_band_attenuation, n, N)
+            h_d = 2 * new_fc if n == 0 else 2 * new_fc * (np.sin(n * 2 * np.pi * new_fc) / (n * 2 * np.pi * new_fc))
+            h.append(h_d * w_n)
+
+    elif filter_type == 'High pass':
+        new_fc = fc - 0.5 * transition_band
+        new_fc /= fs
+        for n in indices:
+            w_n = window_function(stop_band_attenuation, n, N)
+            h_d = 1 - 2 * new_fc if n == 0 else -2 * new_fc * (np.sin(n * 2 * np.pi * new_fc) / (n * 2 * np.pi * new_fc))
+            h.append(h_d * w_n)
+
+    elif filter_type == 'Band pass' and fc2 is not None:
+        new_fc = fc - 0.5 * transition_band
+        new_fc /= fs
+        new_fc2 = fc2 + 0.5 * transition_band
+        new_fc2 /= fs
+        for n in indices:
+            w_n = window_function(stop_band_attenuation, n, N)
+            if n == 0:
+                h_d = 2 * (new_fc2 - new_fc)
+            else:
+                h_d = (2 * new_fc2 * np.sin(n * 2 * np.pi * new_fc2) / (n * 2 * np.pi * new_fc2)) - \
+                      (2 * new_fc * np.sin(n * 2 * np.pi * new_fc) / (n * 2 * np.pi * new_fc))
+            h.append(h_d * w_n)
+
+    elif filter_type == 'Band stop' and fc2 is not None:
+        new_fc = fc + 0.5 * transition_band
+        new_fc /= fs
+        new_fc2 = fc2 - 0.5 * transition_band
+        new_fc2 /= fs
+        for n in indices:
+            w_n = window_function(stop_band_attenuation, n, N)
+            if n == 0:
+                h_d = 1 - 2 * (new_fc2 - new_fc)
+            else:
+                h_d = (2 * new_fc * np.sin(n * 2 * np.pi * new_fc) / (n * 2 * np.pi * new_fc)) - \
+                      (2 * new_fc2 * np.sin(n * 2 * np.pi * new_fc2) / (n * 2 * np.pi * new_fc2))
+            h.append(h_d * w_n)
+
+    return indices, h
+
+def design_filter_button_click(filter_type_var, entry_fs, entry_fc1, entry_fc2, entry_delta_s, entry_transition):
+    # Retrieve values only when the button is clicked
+    filter_type = filter_type_var.get()
+    
+    try:
+        fs = float(entry_fs.get())
+        fc = float(entry_fc1.get())
+        fc2 = entry_fc2.get().strip()
+
+        if filter_type in ["Band pass", "Band stop"]:
+            if not fc2:
+                messagebox.showerror("Error", "Second cutoff frequency is required for bandpass/bandstop filters.")
+                return
+            fc2 = float(fc2)
+        else:
+            fc2 = None
+
+        stop_band_attenuation = float(entry_delta_s.get())
+        transition_band = float(entry_transition.get())
+        calculate_filter(filter_type, fs, fc, fc2, stop_band_attenuation, transition_band)
+        # Placeholder for filter design logic
+        messagebox.showinfo("Filter Design", f"Filter Type: {filter_type}\n"
+                                             f"Sampling Frequency: {fs} Hz\n"
+                                             f"Cutoff Frequencies: {fc}, {fc2}\n"
+                                             f"Stop Band Attenuation: {stop_band_attenuation} dB\n"
+                                             f"Transition Bandwidth: {transition_band} Hz")
+    
+
+    except ValueError:
+        messagebox.showerror("Error", "Please ensure all fields contain valid numeric values.")
+
+
+def Compare_Signals(file_name,Your_indices,Your_samples):      
+    expected_indices=[]
+    expected_samples=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
+        print("Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if(Your_indices[i]!=expected_indices[i]):
+            print("Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Test case failed, your signal have different values from the expected one") 
+            return
+    print("Test case passed successfully")
+
+def filters():
+    # GUI elements
+    rep_window = tk.Tk()
+    rep_window.title("FILTERS")
+    rep_window.geometry("700x700")
+
+    tk.Label(rep_window, text="Filter Type:").pack()
+    filter_type_var = tk.StringVar()
+    filter_type_menu = tk.OptionMenu(rep_window, filter_type_var, "Low pass", "High pass", "Band pass", "Band stop")
+    filter_type_menu.pack()
+
+    tk.Label(rep_window, text="Sampling Frequency (Hz):").pack()
+    entry_fs = tk.Entry(rep_window)
+    entry_fs.pack()
+
+    tk.Label(rep_window, text="First Cutoff Frequency (Hz):").pack()
+    entry_fc1 = tk.Entry(rep_window)
+    entry_fc1.pack()
+
+    tk.Label(rep_window, text="Second Cutoff Frequency (Hz, for bandpass/bandstop):").pack()
+    entry_fc2 = tk.Entry(rep_window)
+    entry_fc2.pack()
+
+    tk.Label(rep_window, text="Stop Band Attenuation (dB):").pack()
+    entry_delta_s = tk.Entry(rep_window)
+    entry_delta_s.pack()
+
+    tk.Label(rep_window, text="Transition Bandwidth (Hz):").pack()
+    entry_transition = tk.Entry(rep_window)
+    entry_transition.pack()
+
+    design_filter_button = tk.Button(
+        rep_window,
+        text="Design Filter",
+        command=lambda: design_filter_button_click(filter_type_var, entry_fs, entry_fc1, entry_fc2, entry_delta_s, entry_transition)
+    )
+    design_filter_button.pack()
+
+    load_button = tk.Button(rep_window, text="Load Signals", command=load_files)
+    load_button.pack()
+    #filter_type = filter_type_var.get()
+    
+    convolution_button = tk.Button(rep_window, text="Perform Convolution", command=lambda: perform_convolution(filter_type_var))
+    convolution_button.pack()
+def open_resample_signal_window():
+        resample_window = tk.Tk()
+        resample_window.title("Resample Signal")
+
+        tk.Label(resample_window, text="Select Signal File:").pack()
+        input_signal_entry = tk.Entry(resample_window, width=50)
+        input_signal_entry.pack()
+        tk.Button(resample_window, text="Browse", command=lambda: browse_signal_file(input_signal_entry)).pack()
+
+        tk.Label(resample_window, text="Sampling Frequency (Hz):").pack()
+        entry_fs = tk.Entry(resample_window)
+        entry_fs.pack()
+
+        tk.Label(resample_window, text="First Cutoff Frequency (Hz):").pack()
+        entry_fc1 = tk.Entry(resample_window)
+        entry_fc1.pack()
+
+        tk.Label(resample_window, text="Second Cutoff Frequency (Hz, for bandpass/bandstop):").pack()
+        entry_fc2 = tk.Entry(resample_window)
+        entry_fc2.pack()
+
+        tk.Label(resample_window, text="Stop Band Attenuation (dB):").pack()
+        entry_delta_s = tk.Entry(resample_window)
+        entry_delta_s.pack()
+
+        tk.Label(resample_window, text="Transition Bandwidth (Hz):").pack()
+        entry_transition = tk.Entry(resample_window)
+        entry_transition.pack()
+
+
+        tk.Label(resample_window, text="Decimation Factor (M):").pack()
+        entry_M = tk.Entry(resample_window)
+        entry_M.pack()
+
+        tk.Label(resample_window, text="Interpolation Factor (L):").pack()
+        entry_L = tk.Entry(resample_window)
+        entry_L.pack()
+
+        # Add a button to trigger the resampling with user inputs
+        resample_button = tk.Button(
+            resample_window, text="Resample Signal",
+            command=lambda: resample_signal_button_click(input_signal_entry.get(),entry_fs.get(),entry_delta_s.get(),entry_fc1.get(),entry_transition.get(), entry_M, entry_L,entry_fc2.get())
+        )
+        resample_button.pack()
+def resample_signal_button_click( input_signal_entry, fs, stop_band_attenuation, fc, transition_band, entry_M, entry_L, fc2=None):
+        try:
+            # Load the input signal from the selected file
+            input_data = load_signal_from_file(input_signal_entry)
+            if not input_data:
+                messagebox.showerror("Error", "Failed to load input signal.")
+                return
+            
+            input_signal = input_data["samples"]  # Use only the samples
+            
+            # Convert user inputs to appropriate types
+            fs = float(fs)
+            stop_band_attenuation = float(stop_band_attenuation)
+            fc = float(fc)
+            transition_band = float(transition_band)
+            M = int(entry_M.get())
+            L = int(entry_L.get())
+            fc2 = float(fc2) if fc2 else None
+
+            # Design the FIR filter
+            indicies, coeffitents = design_fir_filter(
+                "Low pass", fs, stop_band_attenuation, fc, transition_band, fc2
+            )
+
+            # Perform resampling
+            resampled_signal = resample_signal(input_signal, coeffitents, M, L)
+
+
+
+            # Adjust the indices to start from -26
+            adjusted_indices = list(range(-26, -26 + len(resampled_signal)))
+            print("Indices   Samples:")
+            for idx, sample in zip(adjusted_indices, resampled_signal):
+                print(f"  {idx}        {sample}")
+    
+    
+            if L == 0 and M == 2:
+                Compare_Signals(
+                   "D:\\uni\\DSP\\DSP_tasks\\task 7\\Sampling test cases-20241208T221951Z-001\\Sampling test cases\\Testcase 1\\Sampling_Down.txt",
+                    adjusted_indices,
+                    resampled_signal,
+                )
+            elif L == 3 and M == 0:
+                Compare_Signals(
+                    "D:\\uni\\DSP\\DSP_tasks\\task 7\\Sampling test cases-20241208T221951Z-001\\Sampling test cases\\Testcase 2\\Sampling_Up.txt",
+                    adjusted_indices,
+                    resampled_signal,
+                )
+            elif L == 3 and M == 2:
+                Compare_Signals(
+                    "D:\\uni\\DSP\\DSP_tasks\\task 7\\Sampling test cases-20241208T221951Z-001\\Sampling test cases\\Testcase 3\\Sampling_Up_Down.txt",
+                    adjusted_indices,
+                    resampled_signal,
+                )
+
+            if resampled_signal is not None:
+                plot_signal("Resampled Signal", adjusted_indices, resampled_signal)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error during resampling: {e}")
+def resample_signal( input_signal, filter_coefficients, M=0, L=0):
+        if M == 0 and L == 0:
+            raise ValueError("Both M (downsampling factor) and L (upsampling factor) cannot be zero.")
+
+        def remove_trailing_zeros(signal):
+            # Find the last non-zero index and slice the signal
+            last_non_zero_index = len(signal) - 1
+            while last_non_zero_index >= 0 and signal[last_non_zero_index] == 0:
+                last_non_zero_index -= 1
+            return signal[:last_non_zero_index + 1]
+
+        if M == 0 and L != 0:  # Upsampling
+            # Insert L-1 zeros between samples
+            upsampled_signal = np.zeros(len(input_signal) * L)
+            upsampled_signal[::L] = input_signal
+            
+            # Apply low-pass filter
+            filtered_signal = np.convolve(upsampled_signal, filter_coefficients)
+            filtered_signal = remove_trailing_zeros(filtered_signal)  # Remove trailing zeros
+            return filtered_signal  # Return filtered signal after upsampling
+                
+        elif M != 0 and L == 0:  # Downsampling
+            # Apply low-pass filter
+            filtered_signal = np.convolve(input_signal, filter_coefficients)
+            filtered_signal = remove_trailing_zeros(filtered_signal)  # Remove trailing zeros
+            
+            # Downsample by taking every M-th sample
+            resampled_signal = filtered_signal[::M]
+            return resampled_signal  # Return downsampled signal
+
+        elif M != 0 and L != 0:  # Fractional Resampling
+            # Insert L-1 zeros between samples (upsampling)
+            upsampled_signal = np.zeros(len(input_signal) * L)
+            upsampled_signal[::L] = input_signal
+            
+            # Apply low-pass filter
+            filtered_signal = np.convolve(upsampled_signal, filter_coefficients)
+            filtered_signal = remove_trailing_zeros(filtered_signal)  # Remove trailing zeros
+            
+            # Downsample by taking every M-th sample
+            resampled_signal = filtered_signal[::M]
+            return resampled_signal  # Return resampled signal after fractional resampling
+
+        return None
+def load_signal_from_file( file_path):
+        try:
+            # Read the selected signal file
+            indices = []
+            samples = []
+            with open(file_path, 'r') as file:
+                lines = file.readlines()  # Read all lines once
+                for line in lines:
+                    values = line.strip().split()
+                    if len(values) == 2:
+                        try:
+                            # Assuming the first value is an integer (index) and the second is a float (sample)
+                            indices.append(int(values[0]))
+                            samples.append(float(values[1]))
+
+                        except ValueError:
+                            # In case of invalid data in the file
+                            continue
+
+            # If no data was loaded
+            if not indices or not samples:
+                messagebox.showerror("Error", "No valid data found in the file.")
+                return None
+
+            print("Signal loaded successfully.")
+
+            return {"indices": indices, "samples": samples}
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load signal file: {e}")
+            return None
+def browse_signal_file(entry_widget):
+    file_path = filedialog.askopenfilename(
+        title="Select a Signal File",
+        filetypes=(("Text Files", "*.txt"), ("CSV Files", "*.csv"), ("All Files", "*.*"))
+    )
+    if file_path:
+        # Update the entry widget with the selected file path
+        entry_widget.delete(0, END)  # Clear existing content
+        entry_widget.insert(0, file_path)  # Insert the file path
+def plot_signal(title, indices, signal):
+    """
+    Plot a signal with the given title and indices.
+
+    Parameters:
+    - title (str): Title of the plot.
+    - indices (list or array): Indices or x-axis values for the signal.
+    - signal (list or array): The signal values to plot.
+
+    Returns:
+    None
+    """
+    plt.figure(figsize=(10, 6))  # Create a new figure with specified size
+    plt.plot(indices, signal, marker='o', linestyle='-', color='b', label="Signal")  # Plot the signal
+    plt.title(title)  # Set the title
+    plt.xlabel("Indices")  # Label for x-axis
+    plt.ylabel("Amplitude")  # Label for y-axis
+    plt.grid(True)  # Add grid for better visualization
+    plt.legend()  # Add legend
+    plt.tight_layout()  # Adjust layout to avoid overlapping
+    plt.show()  # Display the plot
 root = tk.Tk()
 root.title("Tasks")
 root.geometry("900x600")  
